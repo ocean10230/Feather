@@ -1,13 +1,10 @@
-type AcceptedStorageData = string | number | Record<any, any> | Array<any> | boolean
-
 export const Storage = {
-  async get(key: string): Promise<AcceptedStorageData> { return (await chrome.storage.local.get(key))[key] as AcceptedStorageData },
-  set(key: string, value: AcceptedStorageData) {return chrome.storage.local.set({ [key]: value })}
+  async get(key: string): Promise<StorageData> { return (await chrome.storage.local.get(key))[key] as StorageData },
+  set(key: string, value: StorageData) {return chrome.storage.local.set({ [key]: value })}
 }
 
-export const GetSearches = async () => {
-    const data: any = await Storage.get("cached_queries") as Array<string>;
-    if (data) return data;
+export const GetSearches = () => {
+    const data: string[] = [];
 
     const year = new Date().getFullYear()
 
@@ -94,10 +91,10 @@ export const GetSearches = async () => {
         ...toBe.flatMap(b => beingBases.map(fn => fn(b)))
     )
 
-    Storage.set("cached_queries", data)
     return data
 }
 
+// i love lua
 export const pcall = async <T>(func: () => Promise<T> | T): Promise<[T | any, boolean]> => {
   try {
     const result = await func()
@@ -111,5 +108,47 @@ export const StorageKeys = {
     Today: "Today_Date",
     SearchCompletion: "Today_SearchCompleted",
     MobileSearchCompletion: "Today_MobileSearchCompleted",
-    ActivitiesCompletion: "Today_ActivitiesCompletion"
+    ActivitiesCompletion: "Today_ActivitiesCompletion",
+
+    MobileSearchRulesetId: "MobileSearchRulesetId",
+    ClaimPointsRulesetId: "ClaimPointsRulesetId",
+    RulesetIdsInitialized: "RulesetIdsInitialized"
 }
+
+export const Alarms = {
+  Activties: "activities",
+  PCSearch: "pc_search",
+  MobileSearch: "mobile_search",
+  ClaimPoints: "claim_points"
+}
+
+export const Message = `[ \${extension_name} \${extension_version} ] – [ Note ]
+This extension is built purely with dedication and does not collect any data for analysis/purposes.
+If you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!
+`
+
+import { DOMParser } from "linkedom"
+
+export const ScriptList = (html: string): NextFlightData => {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const scripts = doc.querySelectorAll("script")
+  const scriptList: NextFlightData[] = []
+  
+  scripts.forEach((element: HTMLScriptElement) => {
+    if (element.innerHTML.includes("__next_f")) {
+      const str = element.innerHTML
+      const match = str.match(/self\.__next_f\.push\((\[.*?\])\)/s)
+
+      if (!match) return
+      const dataString = match[1]
+
+      if (!dataString) return
+      scriptList.push(JSON.parse(dataString).at(-1))
+    }
+  })
+
+  return scriptList.join("\n") as NextFlightData
+}
+
+export const date=(d=new Date):QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`

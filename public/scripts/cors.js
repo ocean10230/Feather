@@ -1,7 +1,7 @@
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener(async (msg) => {
   if (window.location.host === "bing.com") {
     if (msg.type === "SPOOF_MOBILE_SEARCH") {
-      await chrome.storage.local.get("P")[key];
+
     }
   }
 
@@ -57,34 +57,3 @@ chrome.runtime.onMessage.addListener((msg) => {
   else if (msg.type === "CHANGE_TITLE")
     document.title = msg.value;
 })
-
-window.onload = function() {
-  if (window.location.host === "bing.com") {
-    e.userAgent && (Object.defineProperty(navigator, "userAgent", {
-      value: e.userAgent,
-      writable: !1,
-      configurable: !0
-    }), Object.defineProperty(navigator, "platform", {
-      value: e.platform,
-      writable: !1,
-      configurable: !0
-    }))
-  }
-  if (window.location.host !== "rewards.bing.com") return;
-
-  const container = document.querySelector(".flex.items-center.gap-2.rounded-ctrlBadgeCorner");
-  const interval = setInterval(() => {
-    if (!container.children) return
-    if (container.children.length < 1) return
-    if (container.children[1].textContent == "Automation User") {}
-
-    else {
-      const firstItem = container.children[0];
-      const clone = firstItem.cloneNode(true);
-
-      clone.textContent = "Automation User";
-      clone.addEventListener("click", () => alert("This is a watermark. It's kinda useless but to indicate that you uses an automator rather than for decoration"))
-      container.insertBefore(clone, container.children[1]);
-    }
-  }, 1000)
-}

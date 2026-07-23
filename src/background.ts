@@ -1,52 +1,7 @@
-import { GetSearches, pcall, Storage, StorageKeys } from "./data"
+import { pcall, Storage, StorageKeys, ScriptList, Alarms, date } from "./utility"
+import { reportSearch, parseData, postQuest, RefreshSession, searches } from "./rewards"
+import { sleep, log, has_tag } from "./expand"
 
-await (async () => {
-  const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
-
-  const rewardTab = await chrome.tabs.create({ url: "https://rewards.bing.com/dashboard", active: !1 });
-  const bingTab = await chrome.tabs.create({ url: "https://bing.com/", active: !1 });
-  await sleep(1000);
-
-  setTimeout(async () => {
-    if (!rewardTab.id) return;
-    await chrome.tabs.sendMessage(rewardTab.id, { type: "CHANGE_TITLE", value: "Preventing some CORS issues" })
-    await sleep(2*1000)
-    await chrome.tabs.remove([rewardTab.id])
-  }, 0)
-
-  setTimeout(async () => {
-    if (!bingTab.id) return;
-    await chrome.tabs.sendMessage(bingTab.id, { type: "CHANGE_TITLE", value: "Preventing some CORS issues" })
-    await sleep(2*1000)
-    await chrome.tabs.remove([bingTab.id])
-  }, 0)
-})()
-
-// lmao im so used to roblox
-type TaskResponse = "DONE" | "DONE_CONFIRMED" | "RETURN_COMPLETE"
-type RewardResponseFormat = `${string}:${string}`
-type QuestDateFormat = `${string}/${string}/${string}`
-type idk = undefined
-type cachedResponsePayload = { rsc?: RewardResponseFormat | idk, html?: RewardResponseFormat | idk, dashboard?: RewardResponseFormat }
-type QuestData = {
-  hash: string
-  title: string
-  points: number
-  offerId: string
-  isCompleted: boolean
-  isLocked: boolean
-  date?: QuestDateFormat
-  isPromotional: boolean | `$undefined`
-}
-
-const idk = undefined
-const cachedResponse: cachedResponsePayload = { rsc: idk, html: idk }
-const searches: string[] = await GetSearches()
-
-const randomHex = (len: number = 32) => [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
-const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
-
-// headers
 const PageData: RequestInit[] = [
   {
     headers: {
@@ -66,182 +21,51 @@ const PageData: RequestInit[] = [
   }
 ]
 
-// report search
-const reportSearch = async(query: string) => {
+let CachedPage;
+const fetchPage = async (): Promise<NextFlightData> => {
   const [res, suc] = await pcall(async () => {
-    const IG = randomHex(32)
-    const IID = `SERP.${Math.floor(Math.random() * 10000)}`
-    const rdr = Math.floor(Math.random() * 10) + 1
-    const rdrig = randomHex(32)
+    if (CachedPage) return CachedPage
 
-    const url = "https://www.bing.com/rewardsapp/reportActivity"
-    const params = new URLSearchParams({ IG, IID, q: query, FORM: "HDRSC1", rdr: `${rdr}`, rdrig, ajaxreq: "1" })
-    const body = new URLSearchParams({ url: `https://www.bing.com/search?q=${encodeURIComponent(query)}&FORM=HDRSC1&rdr=${rdr}&rdrig=${rdrig}`, V: "web" })
+    const response = await fetch('https://rewards.bing.com/earn', PageData[0])
+    const html = await response.text();
+    let parsedHtml: NextFlightData = "00:empty"
 
-    return fetch(`${url}?${params}`, {
-      method: "POST", body, credentials: "include",
-      headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "*/*" }
-    })
-  })
-
-  if (suc) return res
-  else console.error('what is the actual fuh it broke this is simple as shi: ', res)
-}
-
-// parse the stupid shit
-const parseData = async (data?: string, keyword?: string): Promise<any | null> => {
-  const [res, suc] = await pcall(() => {
-    if (!data || !keyword) return
-
-    // spot the one that stands out
-    const list = data.split("\n")
-    const breakdown = list.find((e: string) => e.includes(keyword))
-    if (!breakdown) return null
-
-    // parse and format data with the help of regret(c)
-    const regex = /(?<=\b[0-9]+[a-z]?:)\[[\s\S]*\]/
-    const match = breakdown.match(regex)
-
-    if (!match) return null
-
-    let json: string = match[0]
-    json = json.replace(/"\$undefined"/g, "null")
-
-    try {
-      const parsed = JSON.parse(json)
-      return parsed?.[3] ?? null
-    } catch (e) {
-      console.warn("Parse failed:", e)
-      return null
-    }
-  })
-
-  if (suc)
-    return res
-  else
-    console.error('failed to parse data:', res)
-}
-
-/// =============================================================================== ///
-/// REWARDS USER-DATA FETCHER
-/// =============================================================================== ///
-
-//@ts-expect-error: domparser isn't available natively
-import { DOMParser } from 'https://esm.sh/linkedom'
-
-const fetchPage = async (): Promise<cachedResponsePayload> => {
-  const [res, suc] = await pcall(async () => {
-    if (cachedResponse.rsc && cachedResponse.html) return cachedResponse
-
-    // bimbimbambam all at once
-    const promises = await Promise.all([
-      fetch('https://rewards.bing.com/earn', PageData[0]),
-      fetch('https://rewards.bing.com/earn?_rsc=aq46i', PageData[1])
-    ])
-
-    // parse data
-    const [pageRes, rscRes] = promises
-    const pageHtml = await pageRes.text()
-    const rscData = await rscRes.text() as RewardResponseFormat
-
-    let parsedHtml: RewardResponseFormat = "00:empty"
-    let parsedDashboard: RewardResponseFormat = "00:empty"
-
-    const parseHtmlScriptList = (html: string): RewardResponseFormat => {
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(html, 'text/html')
-      const scripts = doc.querySelectorAll("script")
-      const scriptList: RewardResponseFormat[] = []
-      
-      scripts.forEach((element: HTMLScriptElement) => {
-        if (element.innerHTML.includes("__next_f")) {
-          const str = element.innerHTML
-          const match = str.match(/self\.__next_f\.push\((\[.*?\])\)/s)
-
-          if (!match) return
-          const dataString = match[1]
-
-          if (!dataString) return
-          scriptList.push(JSON.parse(dataString).at(-1))
-        }
-      })
-
-      return scriptList.join("\n") as RewardResponseFormat
-    }
-
-    try {
-      parsedHtml = parseHtmlScriptList(pageHtml);
-    }
+    try { parsedHtml = ScriptList(html); }
     catch { console.log("i got black. i got white. what you want?") }
 
-    // self-explainatory
-    cachedResponse.html = parsedHtml
-    cachedResponse.rsc = rscData
-    cachedResponse.dashboard = parsedDashboard
-
-    console.log(cachedResponse.dashboard)
-
-    return cachedResponse
+    return parsedHtml
   })
 
   if (suc) return res
-  else
-    throw new Error(`couldn't fetch data: ${res}`)
+  else throw new Error(`couldn't fetch data: ${res}`)
 }
 
-/// =============================================================================== ///
-/// AUTOMATION ESSENTIALS
-/// =============================================================================== ///
-
-const date=(d=new Date):QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
-
-// complete quest
-const postQuest = async (tabid: number, quest: QuestData) =>
-  await chrome.tabs.sendMessage(tabid, {
-    type: "COMPLETE_QUEST",
-    data: JSON.stringify([
-      quest.hash, 11, {
-        isPromotional: quest.isPromotional,
-        offerid: quest.offerId,
-        timezoneOffset: `${new Date().getTimezoneOffset()}`
-      }
-    ])
-})
-  
-
-/// =============================================================================== ///
-/// AUTOMATION FUNCTIONS
-/// =============================================================================== ///
-
 const Task = {
-  Search: async (): Promise<TaskResponse | "STUPID_GENERATOR"> => {
+  Search: async (): Promise<AutomationResponse | "QUERIES_GENERATION_FAILURE"> => {
+    if (has_tag("ignore_pc_search")) {
+      await Storage.set(StorageKeys.SearchCompletion, true)
+      return "DONE_CONFIRMED"
+    }
+
     const completed = await Storage.get(StorageKeys.SearchCompletion)
-    if (completed == true) return "RETURN_COMPLETE"
+    if (completed == true) return "DONE"
 
     // get search information
     const queries = [...searches].sort(() => 0.5 - Math.random())
     const queryIsntNull = queries.find(Boolean)
 
-    if (queries.find(e => !e) || !queryIsntNull) return "STUPID_GENERATOR"
+    log.pc_search("Queries list length:", queries.length, "items")
 
-    // spoof search
-    const [_, search] = await Promise.all([
-      fetch(`https://bing.com/search?q=${queryIsntNull}`), // to avoid suspicion, make a GET request so it logs into the system
-      reportSearch( queryIsntNull ) // get the points – it doesn't automatically claim points if you search with the request
-    ])
-    
-    const textResponse = await search.text();
+    if (queries.find(e => !e) || !queryIsntNull) return "QUERIES_GENERATION_FAILURE"
 
-    const earned = Number(textResponse.split("DailySearchPointsEarned")[1].split(",")[0]) || 0
-    const limit = Number(textResponse.split("DailySearchPointsLimit")[1].split(",")[0]) || 30
+    let searchesDone = 0
+    const maxSearches = 30
 
-    let searchesDone = earned || 0
-    const maxSearches = (limit || 30) + (10 + Math.random() * 10)
+    log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
 
     // search done
-    if (searchesDone >= maxSearches)
-    {
-      chrome.alarms.clear("searches")
+    if (searchesDone >= maxSearches) {
+      log.pc_search("Searches done confirmed, stopping searching for today")
       Storage.set(StorageKeys.SearchCompletion, true)
       return "DONE_CONFIRMED"
     }
@@ -249,51 +73,51 @@ const Task = {
     // self-explainatory
     for (const query of queries) {
       if (searchesDone >= maxSearches) break
-      try { reportSearch(query) }
+      try {
+        const [_, __] = await Promise.all([ fetch(`https://bing.com/search?q=${query}`), reportSearch( query ) ]);
+      }
       catch(e) { console.error("Failed to search:", e) }
 
       searchesDone++
       await sleep(7000 + Math.random() * 3500)
     }
 
+    log.pc_search("Done. Awaiting confirmation")
     return "DONE"
   },
 
-  MobileSearch: async (): Promise<TaskResponse | "STUPID_GENERATOR"> => {
-    const completed = await Storage.get(StorageKeys.MobileSearchCompletion)
-    if (completed == true) return "RETURN_COMPLETE"
-
+  Activity: async (): Promise<AutomationResponse | "PARSED_DATA_NOT_FOUND" | "QUESTS_NOT_FOUND" | "INVALID_QUEST_DATA" | "NO_TAB_ID"> => {
+    if (has_tag("ignore_activities")) {
+      await Storage.get(StorageKeys.ActivitiesCompletion)
+      return "DONE_CONFIRMED"
+    }
     
-
-    return "DONE"
-  },
-
-  Activity: async (): Promise<TaskResponse | "PARSED_DATA_NOT_FOUND" | "QUESTS_NOT_FOUND" | "INVALID_QUEST_DATA" | "NO_TAB_ID"> => {
     const completed = await Storage.get(StorageKeys.ActivitiesCompletion)
-    if (completed == true) return "RETURN_COMPLETE"
+    if (completed == true) return "DONE"
 
-    const pageData = (await fetchPage()).html
+    log.activities("Getting activities")
+
+    const pageData = await fetchPage()
     if (!pageData) return "PARSED_DATA_NOT_FOUND"
 
+    log.activities("Parsing activities list from HTML")
     const arr = Array.isArray
-    const activities = await parseData(pageData, "MoreActivities")
-    const dailyset = await parseData(pageData, `"type":"dailyset"`)
-
-    const questList = {
-      daily: dailyset.model.dailySetItems,
-      activities: (activities.children as Array<Record<string, any>>)?.at(-1)?.activityCards
-    }
+    const parsed_activities = await parseData(pageData, "MoreActivities")
+    const activities = (parsed_activities.children as Array<Record<string, any>>)?.at(-1)?.activityCards
 
     // validate data
-    if (!questList.daily || !questList.activities) return "QUESTS_NOT_FOUND"
-    if (!arr(questList.daily) || !arr(questList.activities)) return "INVALID_QUEST_DATA"
+    log.activities("Validating activities list")
+    if (!activities) return "QUESTS_NOT_FOUND"
+    if (!arr(activities)) return "INVALID_QUEST_DATA"
+    log.activities("Filtering activities list")
 
     // bimbimbabmbam
-    const combinedList = [...questList.daily, ...questList.activities]
+    const combinedList = [...activities]
     const unlockedQuests = combinedList.filter((e: QuestData) => (!e.isCompleted && !e.isLocked && e.points > 0))
     const formattedList = unlockedQuests.filter((e: QuestData) => (e.date ? e.date == date() : true))
 
     if (formattedList.length < 1) return "DONE_CONFIRMED"
+    log.activities("Faking activities completion")
     
     // more bimbimbambam
     const rewardTab = await chrome.tabs.create({ url: "https://rewards.bing.com/earn", active: !1 }); if (!rewardTab.id) return "NO_TAB_ID"
@@ -315,77 +139,119 @@ const Task = {
   },
 
   PersistenceQuests: async () => {
-    // path regex, /earn/quest/
-
-    
+    // path regex, /earn/quest/    
   },
 
   EarnPoints: async () => {
+    if (has_tag("ignore_points")) return
+
+    log.claim_points("Fetching dashboard's raw HTML")
     const fetched = await fetch('https://rewards.bing.com/dashboard', PageData[0]);
     const pageData = await fetched.text()
 
     if (!pageData) return "PARSED_DATA_NOT_FOUND"
 
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(pageData, 'text/html')
+    log.claim_points("Parsing available points...")
 
-    const p_text = doc.querySelectorAll(`div.flex.grow.items-center.gap-2 div.flex p.text-pageHeader`)[1];
-    const points = Number(p_text)
+    let parsedHtml: NextFlightData = "00:empty"
+    try { parsedHtml = ScriptList(pageData); } catch {}
+    if (parsedHtml == "00:empty") return "PARSED_DATA_NOT_FOUND"
 
-    if (points > 0) {
-      const rewardTab = await chrome.tabs.create({ url: "https://rewards.bing.com/dashboard", active: !1 }); if (!rewardTab.id) return "NO_TAB_ID"
-      await sleep(3 * 1000);
+    const parsed_modal = await parseData(parsedHtml, `DashboardHeader_ClaimablePoints`)
+    const parsed_button = parsed_modal?.children?.[0]?.[3]
+    const parsed_points = parsed_button?.instrument?.data.points as number
+    const clickable = parsed_button?.instrument?.click as boolean
 
-      await chrome.tabs.sendMessage(rewardTab.id, {
-        type: "CHANGE_TITLE",
-        value: "Claiming extra points – Do not close"
+    log.claim_points("Parsed points:", parsed_points, "Clickable:", clickable)
+
+    if (clickable && parsed_points > 0) {
+      log.claim_points("Claiming your ", parsed_points, "unclaimed points...")
+
+      const dpl = pageData.split("?dpl=")[1].split("\"")[0]
+
+      fetch("https://rewards.bing.com/dashboard", {
+        "headers": {
+          "accept": "text/x-component",
+          "content-type": "text/plain;charset=UTF-8",
+          "next-action": "00cf5ba7699f0e920ffcff223f9e48fea78fd49784",
+          "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C16%5D",
+          "x-deployment-id": dpl
+        },
+        "referrer": "https://rewards.bing.com/dashboard",
+        "body": "[]",
+        "method": "POST",
+        "mode": "cors",
+        "credentials": "omit"
+      }).then(async (r) => {
+        if (r.statusText != "OK")
+          console.error("Claiming points failed, Microsoft backend error. HTTP status: ", r.status)
+        else
+          console.log("Claimed the points successfully")
+
+        await fetch("https://rewards.bing.com/dashboard?_rsc=m4hDHKgQwxYB2kdn", {
+          "headers": {
+            "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2C%22refetch%22%2C16%5D",
+            "rsc": "1", "x-deployment-id": dpl
+          },
+          "referrer": "https://rewards.bing.com/dashboard",
+          "body": null,
+          "method": "GET",
+          "mode": "cors",
+          "credentials": "omit"
+        });
       })
-
-      await chrome.tabs.sendMessage(rewardTab.id, {
-        type: "CLAIN_POINTS"
-      })
-      
-      
-      await sleep(2000)
-      await chrome.tabs.remove([rewardTab.id])
     }
+
+    return "DONE";
   }
 }
 
-/// =============================================================================== ///
-/// INITALIZATION OF ALARMS, STARTUP AND INSTALLATION OF EXTENSIONS
-/// =============================================================================== ///
-
 const init = async () => {
+  await RefreshSession();
   const todaydate = await Storage.get(StorageKeys.Today) as QuestDateFormat
 
   // if its not today then kaboom
   if (todaydate !== date()) {
+    log.initlialize("Detected date change, resetting progress")
     Storage.set(StorageKeys.Today, date())
     Storage.set(StorageKeys.ActivitiesCompletion, false)
     Storage.set(StorageKeys.SearchCompletion, false)
   }
 
   // setup some stupid alarms
-  chrome.alarms.create("searches", { periodInMinutes: 3.8 })
-  chrome.alarms.create("quests", { periodInMinutes: 1 })
-  chrome.alarms.create("extra", { periodInMinutes: 7.5 })
+  log.initlialize("Creating alarms")
+  chrome.alarms.create(Alarms.PCSearch, { periodInMinutes: 3.8 })
+  chrome.alarms.create(Alarms.MobileSearch, { periodInMinutes: 2 })
+  chrome.alarms.create(Alarms.Activties, { periodInMinutes: 1 })
+  chrome.alarms.create(Alarms.ClaimPoints, { periodInMinutes: 7.5 })
 
   // bimbimbambam
   await sleep(2000)
-  Task.Activity().then(id=>{if(id=="DONE_CONFIRMED")chrome.alarms.clear("quests")})
-  Task.Search().then(id=>{if(id=="DONE_CONFIRMED")chrome.alarms.clear("searches")})
-  Task.EarnPoints()
+  Task.Activity().then( id => {
+    log.activities("Completion status ID:", id)
+    if (id == "DONE_CONFIRMED") chrome.alarms.clear(Alarms.Activties)
+  })
+
+  Task.Search().then(id => {
+    log.pc_search("Completion status ID:", id)
+    if (id == "DONE_CONFIRMED") chrome.alarms.clear(Alarms.PCSearch)
+  })
+
+  Task.EarnPoints().then(id => log.claim_points("Completion status ID:", id))
 }
 
-// the events
+// Events 
+import { Message } from "./utility"
+
 chrome.runtime.onStartup.addListener(() => init())
-chrome.runtime.onInstalled.addListener(() => init())
-chrome.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name === "searches") Task.Search()
-  if (alarm.name === "quests") Task.Activity()
-  if (alarm.name === "extra") Task.EarnPoints()
+chrome.runtime.onInstalled.addListener(() => {
+  const manifest = chrome.runtime.getManifest();
+  console.error(Message.replace('\${extension_version}', manifest.version).replace('\${extension_name}', manifest.name))
+  init()
 })
 
-// OPTIONAL INFORMER
-console.warn("You can remove this message – If you encounter a bug that persist, please report at https://ocean102.is-a.dev, your help is appreciated. Thank you!")
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === Alarms.PCSearch) Task.Search()
+  if (alarm.name === Alarms.Activties) Task.Activity()
+  if (alarm.name === Alarms.ClaimPoints) Task.EarnPoints()
+})

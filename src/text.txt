@@ -3,7 +3,7 @@
 fetch("https://rewards.bing.com/earn/quest/ENstar_pcparent_FY26_WSB_Dec_punchcard?_rsc=dTFa1xaL_tAmt0NV", {
   "headers": {
     "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9,vi-VN;q=0.8,vi;q=0.7",
+    "accept-language": "en-US,en;q=0.9,",
     "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22quest%22%2C%7B%22children%22%3A%5B%5B%22questId%22%2C%22ENstar_pcparent_FY26_WSB_Dec_punchcard%22%2C%22d%22%2Cnull%5D%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2C%22refetch%22%2C16%5D",
     "priority": "u=1, i", "rsc": "1",
     "x-deployment-id": "20260707-1"
@@ -13,4 +13,34 @@ fetch("https://rewards.bing.com/earn/quest/ENstar_pcparent_FY26_WSB_Dec_punchcar
   "method": "GET",
   "mode": "cors",
   "credentials": "include"
+});
+
+// claiming extra points
+
+fetch("https://rewards.bing.com/dashboard", {
+  "headers": {
+    "accept": "text/x-component",
+    "content-type": "text/plain;charset=UTF-8",
+    "next-action": "00cf5ba7699f0e920ffcff223f9e48fea78fd49784",
+    "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C16%5D",
+    "x-deployment-id": "20260721-3"
+  },
+  "referrer": "https://rewards.bing.com/dashboard",
+  "body": "[]",
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "omit"
+});
+
+fetch("https://rewards.bing.com/dashboard?_rsc=m4hDHKgQwxYB2kdn", {
+  "headers": {
+    "next-router-state-tree": "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2Cnull%2C0%5D%7D%2Cnull%2C%22refetch%22%2C16%5D",
+    "rsc": "1",
+    "x-deployment-id": "20260721-3"
+  },
+  "referrer": "https://rewards.bing.com/dashboard",
+  "body": null,
+  "method": "GET",
+  "mode": "cors",
+  "credentials": "omit"
 });
