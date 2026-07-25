@@ -1,5 +1,11 @@
-// udj
+HERE IS THE LIST WHAT TO ADD NEXT:
 
+# Persistence quest automation
+
+The quests that are being like 4 weeks long, Dunno bout it. It probably requires same-origin.
+Here's the copied request in order to finish one of the task
+
+```js
 fetch("https://rewards.bing.com/earn/quest/ENstar_pcparent_FY26_WSB_Dec_punchcard?_rsc=dTFa1xaL_tAmt0NV", {
   "headers": {
     "accept": "*/*",
@@ -14,9 +20,19 @@ fetch("https://rewards.bing.com/earn/quest/ENstar_pcparent_FY26_WSB_Dec_punchcar
   "mode": "cors",
   "credentials": "include"
 });
+```
 
-// claiming extra points
+It's super fast to do manually but also risk getting banned
 
+<hr>
+
+# Claiming extra points
+There are some points missing because Microsoft decided that you should put more effort to claim the extra unclaimed points.
+
+Here are 2 codes that triggers the claim points thing.
+Note: the microsoft rewards breaks sometime and just throw a 500 internal server error
+
+```js
 fetch("https://rewards.bing.com/dashboard", {
   "headers": {
     "accept": "text/x-component",
@@ -44,3 +60,4 @@ fetch("https://rewards.bing.com/dashboard?_rsc=m4hDHKgQwxYB2kdn", {
   "mode": "cors",
   "credentials": "omit"
 });
+```

@@ -63,23 +63,16 @@ const Task = {
 
     log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
 
-    // search done
-    if (searchesDone >= maxSearches) {
-      log.pc_search("Searches done confirmed, stopping searching for today")
-      Storage.set(StorageKeys.SearchCompletion, true)
-      return "DONE_CONFIRMED"
-    }
-
     // self-explainatory
     for (const query of queries) {
       if (searchesDone >= maxSearches) break
       try {
-        const [_, __] = await Promise.all([ fetch(`https://bing.com/search?q=${query}`), reportSearch( query ) ]);
+        await Promise.all([ fetch(`https://bing.com/search?q=${query}`), reportSearch( query ) ]);
       }
       catch(e) { console.error("Failed to search:", e) }
 
       searchesDone++
-      await sleep(7000 + Math.random() * 3500)
+      await sleep(10000 + Math.random() * 3500)
     }
 
     log.pc_search("Done. Awaiting confirmation")
@@ -96,8 +89,8 @@ const Task = {
     if (completed == true) return "DONE"
 
     log.activities("Getting activities")
-
     const pageData = await fetchPage()
+
     if (!pageData) return "PARSED_DATA_NOT_FOUND"
 
     log.activities("Parsing activities list from HTML")
@@ -207,6 +200,14 @@ const Task = {
 }
 
 const init = async () => {
+  chrome.declarativeNetRequest.getDynamicRules((rules) => {
+    const ruleIds = rules.map(rule => rule.id);
+    console.log("Removing leftover dynamic rules :", ruleIds)
+    chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: ruleIds
+    });
+  });
+
   await RefreshSession();
   const todaydate = await Storage.get(StorageKeys.Today) as QuestDateFormat
 
@@ -220,7 +221,7 @@ const init = async () => {
 
   // setup some stupid alarms
   log.initlialize("Creating alarms")
-  chrome.alarms.create(Alarms.PCSearch, { periodInMinutes: 3.8 })
+  chrome.alarms.create(Alarms.PCSearch, { periodInMinutes: 10 })
   chrome.alarms.create(Alarms.MobileSearch, { periodInMinutes: 2 })
   chrome.alarms.create(Alarms.Activties, { periodInMinutes: 1 })
   chrome.alarms.create(Alarms.ClaimPoints, { periodInMinutes: 7.5 })

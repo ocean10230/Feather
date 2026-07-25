@@ -1,5 +1,5 @@
 declare type TaskResponse = "DONE" | "DONE_CONFIRMED" | "RETURN_COMPLETE"
-declare type AcceptedStorageData = string | number | Record<any, any> | Array<any> | boolean
+declare type StorageData = string | number | Record<any, any> | Array<any> | boolean
 declare type NextFlightData = `${string}:${string}`
 declare type QuestDateFormat = `${string}/${string}/${string}`
 declare type None = undefined | null | void | "$undefined"
