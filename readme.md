@@ -1,4 +1,4 @@
 <h1>
-  <img src="https://githubusercontent.com" width="30" vertical-align="middle">
+  <img src="./public/icon.png" width="52" vertical-align="middle">
   My Awesome Project
 </h1>
