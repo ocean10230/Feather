@@ -1,4 +1,8 @@
-<h1 align="center">
+<table>
+  <tr>
+<h1 text-align="center">
   <img src="./public/icon.png" width="52" vertical-align="middle">
-  Rewards Automator
+  My Awesome Project
 </h1>
+</tr>
+</table>
