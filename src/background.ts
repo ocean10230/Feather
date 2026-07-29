@@ -1,18 +1,12 @@
 import { Storage, StorageKeys, Alarms, date, Message } from "./rewards/utility.ts"
-import { parseData, postQuest, RefreshSession, FetchPage } from "./rewards/component.ts"
-
-import { sleep, log, has_tag } from "./expand.ts"
 import { AddPreregisteredTasks, ClearTaskStatus, Listen, Register } from "./task.ts"
+import { RefreshSession} from "./rewards/component.ts"
+import { log } from "./expand.ts"
 
 import pc_search from "./tasks/searches.ts"
 import extra_points from "./tasks/extra_points.ts"
 import activities from "./tasks/activities.ts"
 
-const Task = {
-  PersistenceQuests: async () => {
-    // path regex, /earn/quest/    
-  }
-}
 
 const init = async () => {
   chrome.declarativeNetRequest.getDynamicRules((rules) => {

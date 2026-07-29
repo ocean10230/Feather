@@ -28,11 +28,3 @@ declare type TaskRegistration = {
   disabled?: boolean,
   disable_logs?: boolean
 }
-
-declare enum TaskRegistrationStatus {
-  Unknown, Success, Failed, Taken, AlreadyDone
-}
-
-declare enum TaskRemovalStatus {
-  Unknown, Success, Failed, NotFound
-}

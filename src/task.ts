@@ -1,7 +1,15 @@
 import { log } from "./expand";
-import { Storage } from "./rewards/utility";
+import { Storage } from "./rewards/utility"
 
-const RegisteredTasks = new Map<string, TaskRegistration>();
+declare enum TaskRegistrationStatus {
+  Unknown, Success, Failed, Taken, AlreadyDone
+}
+
+declare enum TaskRemovalStatus {
+  Unknown, Success, Failed, NotFound
+}
+
+const RegisteredTasks = new Map<string, TaskRegistration>()
 const PreRegisteredTasks: Record<string, true | undefined> = {}
 
 export const AddPreregisteredTasks = (task: string[]) => {
