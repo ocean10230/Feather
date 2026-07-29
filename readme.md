@@ -1,4 +1,4 @@
-<a>
-<img src="./public/icon.png" width="25">
-<h1>Rewards Automator</h1>
-</a>
+<h1>
+  <img src="https://githubusercontent.com" width="30" vertical-align="middle">
+  My Awesome Project
+</h1>
