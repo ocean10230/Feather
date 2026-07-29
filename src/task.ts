@@ -4,7 +4,7 @@ import { Storage } from "./rewards/utility";
 const RegisteredTasks = new Map<string, TaskRegistration>();
 const PreRegisteredTasks: Record<string, true | undefined> = {}
 
-export const AddPreregisteredTasks = (...task: string[])=> {
+export const AddPreregisteredTasks = (task: string[]) => {
     task.forEach((e: string) => {
         PreRegisteredTasks[e] = true
     })
