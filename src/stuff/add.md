@@ -61,3 +61,46 @@ fetch("https://rewards.bing.com/dashboard?_rsc=m4hDHKgQwxYB2kdn", {
   "credentials": "omit"
 });
 ```
+
+Working on the solution, snippet to get the required param
+
+```js
+function convertNode(segment, value, isRoot = false) {
+    let parallelRoutes = {};
+
+    if (value && value.children) {
+        const child = value.children;
+
+        parallelRoutes = {
+            children: convertNode(
+                child[0],
+                child[1],
+                false
+            )
+        };
+    }
+
+    return [
+        segment,
+        parallelRoutes,
+        null,
+        null,
+        isRoot ? 16 : 0
+    ];
+}
+
+
+function parseFlightTree(tree) {
+    const segment = tree[0];
+    const routes = tree[1];
+
+    return convertNode(segment, routes, true);
+}
+
+
+const routerStateTree = parseFlightTree(rawTree);
+
+const nextRouterStateTree = encodeURIComponent(
+    JSON.stringify(routerStateTree)
+);
+```

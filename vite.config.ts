@@ -3,7 +3,7 @@ import path from 'path'
 
 export default defineConfig({
   build: {
-    minify: true,
+    minify: false,
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),

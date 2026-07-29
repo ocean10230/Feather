@@ -1,4 +1,3 @@
-declare type TaskResponse = "DONE" | "DONE_CONFIRMED" | "RETURN_COMPLETE"
 declare type StorageData = string | number | Record<any, any> | Array<any> | boolean
 declare type NextFlightData = `${string}:${string}`
 declare type QuestDateFormat = `${string}/${string}/${string}`
@@ -11,7 +10,16 @@ declare type QuestData = {
   isCompleted: boolean
   isLocked: boolean
   date?: QuestDateFormat
-  isPromotional: boolean | `$undefined`
+  isPromotional: boolean | None
 }
 
-declare type AutomationResponse = "DONE" | "DONE_CONFIRMED" | "UNKNOWN_ERROR" | "FAILED_COMPLETELY"
+declare enum TaskResponse {
+  Done = 0, Confirm, UnknownError, GenerationFailure,
+  ParseFailure, Disabled, InvalidInformation,
+  BrowserError, Ignored
+}
+
+declare type TaskRegistration = {
+  handler: () => Promise<AutomationResponse | string>,
+  name: string
+}

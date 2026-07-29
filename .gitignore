@@ -1,2 +1,11 @@
+# basic stuff
 dist/
-node_modules
+node_modules/
+
+# some stuff that does not change 
+vite.config.ts
+index.html
+
+# i add this to remind me what to add
+src/*.log
+src/*.md

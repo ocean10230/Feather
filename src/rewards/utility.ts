@@ -112,7 +112,10 @@ export const StorageKeys = {
 
     MobileSearchRulesetId: "MobileSearchRulesetId",
     ClaimPointsRulesetId: "ClaimPointsRulesetId",
-    RulesetIdsInitialized: "RulesetIdsInitialized"
+    RulesetIdsInitialized: "RulesetIdsInitialized",
+
+    DeploymentId: "DeploymentId",
+    ClaimPointsNextActionId: "ClaimPointsNextActionId",
 }
 
 export const Alarms = {
