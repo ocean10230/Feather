@@ -11,13 +11,14 @@ export const secureRandom = (min: number, max: number): number => {
 }
 
 export const log = {
-  mobile_search: (...args: any[]) => console.log("[Mobile Search]",...args),
-  pc_search: (...args: any[]) => console.log("[PC Search]",...args),
-  activities: (...args: any[]) => console.log("[Activities]",...args),
-  claim_points: (...args: any[]) => console.log("[Claim Points]",...args),
-  initlialize: (...args: any[]) => console.log("[Initialize]",...args),
-  bg: (...args: any[]) => console.log("[Service Worker]",...args),
-  tab: (...args: any[]) => console.log("[Tabs]",...args),
+  mobile_search: (...args: any[]) => console.log("[mobile_search]",...args),
+  pc_search: (...args: any[]) => console.log("[pc_search]",...args),
+  activities: (...args: any[]) => console.log("[activities]",...args),
+  claim_points: (...args: any[]) => console.log("[claim_points]",...args),
+  initlialize: (...args: any[]) => console.log("[initialize]",...args),
+  bg: (...args: any[]) => console.log("[service_worker]",...args),
+  tab: (...args: any[]) => console.log("[tabs]",...args),
+  task: (...args: any[]) => console.log("[task_handler]",...args),
 };
 
 const description = chrome.runtime.getManifest().description ?? "";

@@ -21,5 +21,18 @@ declare enum TaskResponse {
 
 declare type TaskRegistration = {
   handler: () => Promise<AutomationResponse | string>,
-  name: string
+  name: string,
+  interval: number,
+  done?: boolean,
+  ignorance_tags?: string[],
+  disabled?: boolean,
+  disable_logs?: boolean
+}
+
+declare enum TaskRegistrationStatus {
+  Unknown, Success, Failed, Taken, AlreadyDone
+}
+
+declare enum TaskRemovalStatus {
+  Unknown, Success, Failed, NotFound
 }
