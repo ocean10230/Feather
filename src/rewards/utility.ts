@@ -3,8 +3,28 @@ export const Storage = {
   set(key: string, value: StorageData) {return chrome.storage.local.set({ [key]: value })}
 }
 
-export const GetSearches = () => {
-    const data: string[] = [];
+export const StorageKeys = {
+    Today: "Today_Date",
+    SearchCompletion: "Today_SearchCompleted",
+    MobileSearchCompletion: "Today_MobileSearchCompleted",
+    ActivitiesCompletion: "Today_ActivitiesCompletion",
+
+    MobileSearchRulesetId: "MobileSearchRulesetId",
+    ClaimPointsRulesetId: "ClaimPointsRulesetId",
+    RulesetIdsInitialized: "RulesetIdsInitialized",
+
+    DeploymentId: "DeploymentId",
+    ClaimPointsNextActionId: "ClaimPointsNextActionId",
+
+    SearchList: "SearchList",
+    SearchListExpiry: "SearchListRenewalDate",
+    SearchListLength: "SearchListLength"
+}
+
+
+export const InitializeSearchList = () => {
+    const data: string[] = []
+    const expiration = Date.now() + 7 * 24 * 60 * 60 * 1000
 
     const year = new Date().getFullYear()
 
@@ -89,9 +109,13 @@ export const GetSearches = () => {
         ...expand(socialMedias, socialBases),
         ...expand(gamesWithMaps, [...mapBases, ...gameBases], gameExtra),
         ...toBe.flatMap(b => beingBases.map(fn => fn(b)))
-    )
+    );
 
-    return data
+    data.forEach((item: string, index) => Storage.set(`${StorageKeys.SearchList}-${index}`, item))
+    Promise.all([
+        Storage.set(StorageKeys.SearchListExpiry, expiration),
+        Storage.set(StorageKeys.SearchListLength, data.length)
+    ])
 }
 
 // i love lua
@@ -102,20 +126,6 @@ export const pcall = async <T>(func: () => Promise<T> | T): Promise<[T | any, bo
   } catch (e) {
     return [e, false]
   }
-}
-
-export const StorageKeys = {
-    Today: "Today_Date",
-    SearchCompletion: "Today_SearchCompleted",
-    MobileSearchCompletion: "Today_MobileSearchCompleted",
-    ActivitiesCompletion: "Today_ActivitiesCompletion",
-
-    MobileSearchRulesetId: "MobileSearchRulesetId",
-    ClaimPointsRulesetId: "ClaimPointsRulesetId",
-    RulesetIdsInitialized: "RulesetIdsInitialized",
-
-    DeploymentId: "DeploymentId",
-    ClaimPointsNextActionId: "ClaimPointsNextActionId",
 }
 
 export const Alarms = {

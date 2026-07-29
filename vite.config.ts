@@ -13,5 +13,11 @@ export default defineConfig({
         entryFileNames: (chunk) => 'scripts/[name].js'
       }
     }
-  }
+  },
+  resolve: {
+    alias: {
+      // Points to the current root (src)
+      '@': path.resolve(__dirname, 'src'), 
+    },
+  },
 })

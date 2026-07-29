@@ -1,4 +1,4 @@
-import { GetSearches, pcall, Storage, StorageKeys } from "./utility.ts"
+import { pcall, Storage, StorageKeys } from "./utility.ts"
 import { log, randomHex, sleep } from "../expand.ts"
 import { ScriptList } from "./utility.ts"
 
@@ -190,5 +190,3 @@ export const RefreshSession = async () => {
 
     try {await chrome.tabs.remove(rewardTab.id).catch(() => {})} catch {}
 };
-
-export const searches: string[] = GetSearches()

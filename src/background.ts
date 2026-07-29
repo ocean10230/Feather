@@ -1,51 +1,13 @@
-import { Storage, StorageKeys, ScriptList, Alarms, date } from "./rewards/utility.ts"
+import { Storage, StorageKeys, ScriptList, Alarms, date, Message } from "./rewards/utility.ts"
 import {
   reportSearch, parseData, postQuest, RefreshSession,
-  searches, FetchPage, ParseClaimPointsNextActionID, parseRouterTree
+  FetchPage, ParseClaimPointsNextActionID, parseRouterTree
 } from "./rewards/component.ts"
 
 import { sleep, log, has_tag } from "./expand.ts"
+import { AddPreregisteredTasks, ClearTaskStatus, Listen, Register } from "./task.ts"
 
 const Task = {
-  Search: async (): Promise<TaskResponse> => {
-    if (has_tag("ignore_pc_search")) {
-      await Storage.set(StorageKeys.SearchCompletion, true)
-      return TaskResponse.Confirm
-    }
-
-    const completed = await Storage.get(StorageKeys.SearchCompletion)
-    if (completed == true) return TaskResponse.Confirm
-
-    try {
-      const queries = [...searches].sort(() => 0.5 - Math.random())
-      log.pc_search("Queries list length:", queries.length, "items")
-
-      let searchesDone = 0
-      const maxSearches = 30
-
-      log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
-
-      // self-explainatory
-      for (const query of queries) {
-        if (searchesDone >= maxSearches) break
-
-        try { await Promise.all([ fetch(`https://bing.com/search?q=${query}`), reportSearch( query ) ]); }
-        catch(e) { console.error("Failed to search:", e) }
-
-        searchesDone++
-        await sleep(10000 + Math.random() * 3500)
-      }
-    }
-    catch (e) {
-      log.pc_search("Unknown error:", e)
-      return TaskResponse.UnknownError
-    }
-    
-
-    log.pc_search("Done. Awaiting confirmation")
-    return TaskResponse.Done
-  },
-
   Activity: async (): Promise<TaskResponse> => {
     if (has_tag("ignore_activities")) {
       await Storage.get(StorageKeys.ActivitiesCompletion)
@@ -195,51 +157,27 @@ const init = async () => {
   await RefreshSession();
   const todaydate = await Storage.get(StorageKeys.Today) as QuestDateFormat
 
+  AddPreregisteredTasks(Alarms.PCSearch, Alarms.MobileSearch, Alarms.Activties, Alarms.ClaimPoints)
+
   // if its not today then kaboom
   if (todaydate !== date()) {
     log.initlialize("Detected date change, resetting progress")
     Storage.set(StorageKeys.Today, date())
     Storage.set(StorageKeys.ActivitiesCompletion, false)
     Storage.set(StorageKeys.SearchCompletion, false)
+    ClearTaskStatus()
   }
 
-  // setup some stupid alarms
   log.initlialize("Creating alarms")
-  chrome.alarms.create(Alarms.PCSearch, { periodInMinutes: 10 })
-  chrome.alarms.create(Alarms.MobileSearch, { periodInMinutes: 2 })
-  chrome.alarms.create(Alarms.Activties, { periodInMinutes: 1 })
-  chrome.alarms.create(Alarms.ClaimPoints, { periodInMinutes: 15 })
-
-  // the automation part
-  Task.Activity().then( id => {
-    log.activities("Completion status ID:", id)
-
-    if (id == TaskResponse.Confirm)
-      chrome.alarms.clear(Alarms.Activties)
-  })
-
-  Task.Search().then(id => {
-    log.pc_search("Completion status ID:", id)
-
-    if (id == TaskResponse.Confirm)
-      chrome.alarms.clear(Alarms.PCSearch)
-  })
-
-  Task.EarnPoints().then(id => log.claim_points("Completion status ID:", id))
+  Register({ name: Alarms.Activties, interval: 2, handler: Task.Activity })
+  Register({ name: Alarms.PCSearch, interval: 7, handler: Task.Activity })
+  Register({ name: Alarms.ClaimPoints, interval: 10, handler: Task.Activity })
+  Listen();
 }
-
-// Events 
-import { Message } from "./rewards/utility"
 
 chrome.runtime.onStartup.addListener(() => init())
 chrome.runtime.onInstalled.addListener(() => {
   const manifest = chrome.runtime.getManifest();
   console.error(Message.replace('\${extension_version}', manifest.version).replace('\${extension_name}', manifest.name))
   init()
-})
-
-chrome.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name === Alarms.PCSearch) Task.Search()
-  if (alarm.name === Alarms.Activties) Task.Activity()
-  if (alarm.name === Alarms.ClaimPoints) Task.EarnPoints()
 })

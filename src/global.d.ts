@@ -20,7 +20,7 @@ declare enum TaskResponse {
 }
 
 declare type TaskRegistration = {
-  handler: () => Promise<AutomationResponse | string>,
+  handler: () => Promise<TaskResponse | string>,
   name: string,
   interval: number,
   done?: boolean,

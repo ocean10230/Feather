@@ -1,13 +1,23 @@
 import { log } from "./expand";
+import { Storage } from "./rewards/utility";
 
 const RegisteredTasks = new Map<string, TaskRegistration>();
+const PreRegisteredTasks: Record<string, true | undefined> = {}
+
+export const AddPreregisteredTasks = (...task: string[])=> {
+    task.forEach((e: string) => {
+        PreRegisteredTasks[e] = true
+    })
+}
 
 export const Register = async (task: TaskRegistration) => {
-    if (RegisteredTasks.has(task.name)) TaskRegistrationStatus.Taken
+    if (PreRegisteredTasks[task.name])  PreRegisteredTasks[task.name] = undefined
+    if (await Storage.get(`TASK-${task.name}-COMPLETION`) == false) return TaskRegistrationStatus.AlreadyDone
+    if (RegisteredTasks.has(task.name) && !PreRegisteredTasks[task.name]) return TaskRegistrationStatus.Taken
 
     try {
-        RegisteredTasks.set(task.name, task)
         await chrome.alarms.create(task.name, { periodInMinutes: task.interval })
+        RegisteredTasks.set(task.name, task)
     }
     catch (e) {
         log.task("Failed to register task \"" + task.name + "\". Error:", e)
@@ -32,8 +42,14 @@ export const Remove = async (task: string): Promise<TaskRemovalStatus> => {
     return TaskRemovalStatus.Success
 }
 
+export const ClearTaskStatus = async () => {
+    const UnclearedTaskStatus = Object.keys(PreRegisteredTasks)
+    await Promise.all(UnclearedTaskStatus.map(task => Storage.set(`TASK-${task}-COMPLETION`, false)))
+}
+
+
 export const Listen = () => {
-    for (const Task of Object.values(RegisteredTasks)) Task.handler()
+    for (const task of RegisteredTasks.values()) task.handler()
 
     chrome.alarms.onAlarm.addListener(async PendingTask => {
         const Task = RegisteredTasks.get(PendingTask.name)
@@ -46,14 +62,14 @@ export const Listen = () => {
                 return
             }
 
-            const Result: TaskResponse = await Task.handler()
+            const Result: TaskResponse | string = await Task.handler()
 
             switch (Result) {
                 case TaskResponse.Confirm:
                     log.task(`Task "${Task.name}" is done. Attempt clearing out...`)
-                    RegisteredTasks.set(PendingTask.name, { ...Task, done: true })
                     RegisteredTasks.delete(Task.name)
                     await chrome.alarms.clear(Task.name)
+                    await Storage.set(`TASK-${Task.name}-COMPLETETION`, true)
                     break
                 case TaskResponse.Done:
                     log.task(`Task "${Task.name}" is done. Awaiting confirmation`)
