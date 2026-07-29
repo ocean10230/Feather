@@ -2,7 +2,6 @@
   <img src="./public/icon.png" width="32">
   Rewards Automator
 </h1>
-<hr>
 
 This is a powerful, fully working automator in your browser doing your Microsoft Rewards tasks and also completely free. Although still actively being developed every day but it's still completely functional.
 
