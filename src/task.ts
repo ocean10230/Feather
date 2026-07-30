@@ -1,14 +1,6 @@
-import { log } from "./expand";
-import { Storage } from "./rewards/utility"
-import { TaskResponse } from "./task-response"
-
-enum TaskRegistrationStatus {
-  Unknown, Success, Failed, Taken, AlreadyDone
-}
-
-enum TaskRemovalStatus {
-  Unknown, Success, Failed, NotFound
-}
+import { log } from "@/expand";
+import { Storage } from "@/rewards/utility"
+import { TaskResponse } from "@/task-response"
 
 const RegisteredTasks = new Map<string, TaskRegistration>()
 

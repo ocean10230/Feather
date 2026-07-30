@@ -9,6 +9,8 @@ import activities from "@/tasks/activities.ts"
 
 let initialized = false
 
+const get_self = () => self
+
 const init = async () => {
   if (initialized) return
   initialized = true
@@ -17,12 +19,10 @@ const init = async () => {
   await RefreshSession()
   await InitializeSpoofing()
 
-  // Register tasks
   await Register({ name: Alarms.Activties, interval: 2, handler: activities })
   await Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search })
   await Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points })
 
-  // if its not today then kaboom
   if (await Storage.get(StorageKeys.Today) as QuestDateFormat !== date()) {
     log.initlialize("Detected date change, resetting progress")
 
@@ -35,7 +35,7 @@ const init = async () => {
   }
 
   log.initlialize("Creating alarms")
-  Listen();
+  Listen()
 }
 
 chrome.runtime.onStartup.addListener(() => { void init() })

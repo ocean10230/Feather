@@ -160,11 +160,11 @@ export const ScriptList = (html: string): NextFlightData => {
   return scriptList.join("\n") as NextFlightData
 }
 
-export const date=(d=new Date):QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
+export const date=(d=new Date): QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
 
 import { log } from "@/expand"
 
-    export const CleanUp = async () => {
+export const CleanUp = async () => {
     const rules = await chrome.declarativeNetRequest.getDynamicRules()
     const ruleIds = rules.map(rule => rule.id)
     await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ruleIds })
