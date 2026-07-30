@@ -1,28 +1,6 @@
 import { pcall, Storage, StorageKeys } from "./utility.ts"
-import { log, randomHex, sleep } from "../expand.ts"
+import { log,  sleep } from "../expand.ts"
 import { ScriptList } from "./utility.ts"
-
-export const reportSearch = async(query: string) => {
-  const [res, suc] = await pcall(async () => {
-    log.activities(`Reporting search "${query} to Microsoft's API for points"`)
-    const IG = randomHex(32)
-    const IID = `SERP.${Math.floor(Math.random() * 10000)}`
-    const rdr = Math.floor(Math.random() * 10) + 1
-    const rdrig = randomHex(32)
-
-    const url = "https://www.bing.com/rewardsapp/reportActivity"
-    const params = new URLSearchParams({ IG, IID, q: query, FORM: "HDRSC1", rdr: `${rdr}`, rdrig, ajaxreq: "1" })
-    const body = new URLSearchParams({ url: `https://www.bing.com/search?q=${encodeURIComponent(query)}&FORM=HDRSC1&rdr=${rdr}&rdrig=${rdrig}`, V: "web" })
-
-    return fetch(`${url}?${params}`, {
-        method: "POST", body, credentials: "include",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "*/*" }
-    })
-  })
-
-  if (suc) return res
-  else console.error('what is the actual fuh it broke this is simple as shi: ', res)
-}
 
 // parse the stupid shit
 export const parseData = async (data?: string, keyword?: string): Promise<any | null> => {
@@ -123,21 +101,50 @@ const parseWebpackChunks = (source: string) => {
     return result;
 }
 
-export const ParseClaimPointsNextActionID = async (doc: string, deployment_id: string): Promise<string | undefined> => {
-    const found = doc.match(
-        /<script\b[^>]*\bsrc=["'][^"']*\/_next\/static\/chunks\/webpack-[^"']+["'][^>]*>/i
-    );
+export const InitializeWebpackBundleList = async (doc: string, deployment_id: string) => {
+    if (await Storage.get(StorageKeys.WebpackVersion) !== deployment_id) {
+        await Storage.set(StorageKeys.WebpackVersion, deployment_id)
+        await Storage.set(StorageKeys.WebpackBundleCache, "")
+    }
 
+    const found = doc.match(/<script\b[^>]*\bsrc=["'][^"']*\/_next\/static\/chunks\/webpack-[^"']+["'][^>]*>/i);
     if (!found) return
 
     const scriptUrl = found[0].match(/src=["']([^"']+)["']/i)?.[1];
     if (!scriptUrl) return
 
-    await sleep(50);
+    await sleep(50)
 
     const scriptResponse = await fetch(`https://rewards.bing.com${scriptUrl}`);
     const scriptText = await scriptResponse.text();
     const chunks = parseWebpackChunks(scriptText);
+
+    const chunk_list: Record<string,string> = {}
+
+    for (const chunk of Object.values(chunks)) {
+        const chunkUrl = `https://rewards.bing.com/_next/static/chunks/${chunk}?dpl=${deployment_id}`
+        const chunkResponse = await fetch(chunkUrl) 
+        chunk_list[chunk] = await chunkResponse.text();
+    }
+
+    await Storage.set(StorageKeys.WebpackBundleCache, JSON.stringify(chunk_list))
+}
+
+export const ParseActionId = async (doc: string, deployment_id: string, action_name: string): Promise<string | undefined> => {
+    if (deployment_id == await Storage.get(StorageKeys.DeploymentId)) {
+        const v = await Storage.get(action_name)
+        if (v) return v as string
+    }
+    else Storage.set()
+}
+
+export const ParseClaimPointsNextActionID = async (doc: string, deployment_id: string): Promise<string | undefined> => {
+    if (deployment_id == await Storage.get(StorageKeys.DeploymentId))
+        return await Storage.get(StorageKeys.ClaimPointsNextActionId) as string
+   
+    await InitializeWebpackBundleList(doc, deployment_id)
+    const chunk_list = await Storage.get(StorageKeys.WebpackBundleCache) as string
+    const chunks = JSON.parse(chunk_list)
 
     for (const chunk of Object.values(chunks)) {
         const chunkUrl = `https://rewards.bing.com/_next/static/chunks/${chunk}?dpl=${deployment_id}`
@@ -146,10 +153,10 @@ export const ParseClaimPointsNextActionID = async (doc: string, deployment_id: s
 
         const action_id = chunkText.split(`createServerReference)("`)[1]?.split(`"`)[0]
 
-        if (action_id) {
+        if (action_id && chunkText.includes("PointsClaimSidePanel") && chunkText.includes("earnMoreCta")) {
             await Storage.set(StorageKeys.DeploymentId, deployment_id)
             await Storage.set(StorageKeys.ClaimPointsNextActionId, action_id)
-            console.error(action_id)
+            console.error(action_id, chunkText)
             return action_id
         }
     }
@@ -189,4 +196,4 @@ export const RefreshSession = async () => {
 
 
     try {await chrome.tabs.remove(rewardTab.id).catch(() => {})} catch {}
-};
+}

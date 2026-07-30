@@ -1,7 +1,5 @@
-# basic stuff
 dist/
 node_modules/
-
-# some stuff that does not change 
-vite.config.ts
 index.html
+readme.md
+.git/

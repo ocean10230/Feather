@@ -13,18 +13,18 @@ export const StorageKeys = {
     ClaimPointsRulesetId: "ClaimPointsRulesetId",
     RulesetIdsInitialized: "RulesetIdsInitialized",
 
+    SearchList: "SearchList",
+    SearchListGenerated: "SearchListGenerated",
+    SearchListLength: "SearchListLength",
+
+    WebpackBundleCache: "WebpackBundleCache",
+    WebpackVersion: "WebpackDeploymentId",
     DeploymentId: "DeploymentId",
     ClaimPointsNextActionId: "ClaimPointsNextActionId",
-
-    SearchList: "SearchList",
-    SearchListExpiry: "SearchListRenewalDate",
-    SearchListLength: "SearchListLength"
 }
 
-
-export const InitializeSearchList = () => {
-    const data: string[] = []
-    const expiration = Date.now() + 7 * 24 * 60 * 60 * 1000
+export const GetSearches = () => {
+    const data: string[] = [];
 
     const year = new Date().getFullYear()
 
@@ -109,13 +109,9 @@ export const InitializeSearchList = () => {
         ...expand(socialMedias, socialBases),
         ...expand(gamesWithMaps, [...mapBases, ...gameBases], gameExtra),
         ...toBe.flatMap(b => beingBases.map(fn => fn(b)))
-    );
+    )
 
-    data.forEach((item: string, index) => Storage.set(`${StorageKeys.SearchList}-${index}`, item))
-    Promise.all([
-        Storage.set(StorageKeys.SearchListExpiry, expiration),
-        Storage.set(StorageKeys.SearchListLength, data.length)
-    ])
+    return data
 }
 
 // i love lua
@@ -165,3 +161,40 @@ export const ScriptList = (html: string): NextFlightData => {
 }
 
 export const date=(d=new Date):QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
+
+import { log } from "@/expand"
+
+    export const CleanUp = async () => {
+    const rules = await chrome.declarativeNetRequest.getDynamicRules()
+    const ruleIds = rules.map(rule => rule.id)
+    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ruleIds })
+    log.initlialize("Cleaned up old rules:", ruleIds)
+}
+
+export const InitializeSpoofing = async () => {
+    log.initlialize("Creating new rules to spoof origin")
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: [100], 
+        addRules: [
+            {
+                id: 100,
+                priority: 1,
+                action: {
+                    type: "modifyHeaders",
+                    requestHeaders: [
+                        {
+                            header: "Origin",
+                            operation: "set",
+                            value: "https://rewards.bing.com/"
+                        }
+                    ]
+                },
+                condition: {
+                    urlFilter: "||bing.com", // Matches all URLs. Narrow this down if you only want specific sites.
+                    resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"] // Target pages and network fetches
+                }
+            }
+        ]
+    })
+}

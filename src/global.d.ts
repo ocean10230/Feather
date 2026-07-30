@@ -13,12 +13,6 @@ declare type QuestData = {
   isPromotional: boolean | None
 }
 
-declare enum TaskResponse {
-  Done = 0, Confirm, UnknownError, GenerationFailure,
-  ParseFailure, Disabled, InvalidInformation,
-  BrowserError, Ignored
-}
-
 declare type TaskRegistration = {
   handler: () => Promise<TaskResponse | string>,
   name: string,

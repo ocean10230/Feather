@@ -1,6 +1,7 @@
 import { has_tag, log } from "@/expand"
 import { ScriptList } from "@/rewards/utility"
 import { parseData, ParseClaimPointsNextActionID, parseRouterTree } from "@/rewards/component"
+import { TaskResponse } from "@/task-response"
 
 export default async (): Promise<TaskResponse> => {
     if (has_tag("ignore_points")) return TaskResponse.Ignored
@@ -23,8 +24,7 @@ export default async (): Promise<TaskResponse> => {
 
     log.claim_points("Parsed points:", parsed_points, "Claimable:", clickable)
 
-
-    if (clickable && parsed_points > 0) {
+    if (true) {
       log.claim_points("Getting required paramenters...")
       const dpl = pageData.split("?dpl=")[1].split("\"")[0]
       

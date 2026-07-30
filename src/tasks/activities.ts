@@ -1,6 +1,7 @@
 import { has_tag, sleep, log } from "@/expand"
 import { Storage, StorageKeys, date } from "@/rewards/utility"
 import { parseData, FetchPage, postQuest } from "@/rewards/component"
+import { TaskResponse } from "@/task-response"
 
 export default  async (): Promise<TaskResponse> => {
     if (has_tag("ignore_activities")) {
