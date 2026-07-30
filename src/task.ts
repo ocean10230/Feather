@@ -2,11 +2,11 @@ import { log } from "./expand";
 import { Storage } from "./rewards/utility"
 import { TaskResponse } from "./task-response"
 
-declare enum TaskRegistrationStatus {
+enum TaskRegistrationStatus {
   Unknown, Success, Failed, Taken, AlreadyDone
 }
 
-declare enum TaskRemovalStatus {
+enum TaskRemovalStatus {
   Unknown, Success, Failed, NotFound
 }
 

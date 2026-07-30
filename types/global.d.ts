@@ -22,3 +22,7 @@ declare type TaskRegistration = {
   disabled?: boolean,
   disable_logs?: boolean
 }
+
+interface globalThis {
+  
+}

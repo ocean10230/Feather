@@ -32,6 +32,8 @@ export const parseData = async (data?: string, keyword?: string): Promise<any | 
   else console.error('Failed to parse NextJS flight data:', res)
 }
 
+/*
+
 export const parseRouterTree = (data: NextFlightData) => {
     const list = data.split("\n");
 
@@ -55,6 +57,8 @@ export const parseRouterTree = (data: NextFlightData) => {
 
     return null;
 };
+
+*/
 
 export const postQuest = async (tabid: number, quest: QuestData) =>
 
@@ -130,38 +134,48 @@ export const InitializeWebpackBundleList = async (doc: string, deployment_id: st
     await Storage.set(StorageKeys.WebpackBundleCache, JSON.stringify(chunk_list))
 }
 
-export const ParseActionId = async (doc: string, deployment_id: string, action_name: string): Promise<string | undefined> => {
+export const ParseActionId = async (
+    doc: string, deployment_id: string, 
+    action_name: string, keywords: string | string[]
+): Promise<string | "NOT_FOUND" | undefined> => {
+    const key = action_name + "_" + "ACTION"
+
     if (deployment_id == await Storage.get(StorageKeys.DeploymentId)) {
-        const v = await Storage.get(action_name)
+        const v = await Storage.get(key)
         if (v) return v as string
     }
-    else Storage.set()
-}
-
-export const ParseClaimPointsNextActionID = async (doc: string, deployment_id: string): Promise<string | undefined> => {
-    if (deployment_id == await Storage.get(StorageKeys.DeploymentId))
-        return await Storage.get(StorageKeys.ClaimPointsNextActionId) as string
-   
+    
     await InitializeWebpackBundleList(doc, deployment_id)
     const chunk_list = await Storage.get(StorageKeys.WebpackBundleCache) as string
     const chunks = JSON.parse(chunk_list)
 
-    for (const chunk of Object.values(chunks)) {
-        const chunkUrl = `https://rewards.bing.com/_next/static/chunks/${chunk}?dpl=${deployment_id}`
-        const chunkResponse = await fetch(chunkUrl)
-        const chunkText = await chunkResponse.text()
+    const all_chunks = Object.values(chunks)
+    const res_list = await Promise.all( all_chunks.map(chunk_data => fetch(`https://rewards.bing.com/_next/static/chunks/${chunk_data}?dpl=${deployment_id}`)) )
+    const parsed_webpack_bundle = await Promise.all( res_list.map(promise => promise.text()) )
 
-        const action_id = chunkText.split(`createServerReference)("`)[1]?.split(`"`)[0]
+    const parses_action_id = (script: string) => {
+        return script.split(`createServerReference)("`)[1].split(`"`)[0]
+    }
 
-        if (action_id && chunkText.includes("PointsClaimSidePanel") && chunkText.includes("earnMoreCta")) {
-            await Storage.set(StorageKeys.DeploymentId, deployment_id)
-            await Storage.set(StorageKeys.ClaimPointsNextActionId, action_id)
-            console.error(action_id, chunkText)
-            return action_id
+    for (const webpack_bundle of parsed_webpack_bundle) {
+        if (!webpack_bundle.includes(`createServerReference)("`)) continue
+
+        if (Array.isArray(keywords)) {
+            for (const keyword of keywords)
+                if (webpack_bundle.includes(keyword)) {
+                    const parsed = parses_action_id(key)
+                    await Storage.set(key, parsed)
+                    return parsed
+                }
+        }
+        else if (webpack_bundle.includes(keywords)) {
+            const parsed = parses_action_id(key)
+            await Storage.set(key, parsed)
+            return parsed
         }
     }
 
-    return
+    return "NOT_FOUND"
 }
 
 export const RefreshSession = async () => {
@@ -178,7 +192,7 @@ export const RefreshSession = async () => {
 
     if (currentTab?.url === url) {
         log.tab("Session already valid!")
-        try { await chrome.tabs.remove(rewardTab.id).catch(() => {}) } catch {}
+        try { await chrome.tabs.remove(rewardTab.id) } catch {}
         return
     }
 
@@ -192,8 +206,10 @@ export const RefreshSession = async () => {
         }
 
         try { chrome.tabs.onUpdated.addListener(listener) } catch {}
-    });
+    })
 
 
     try {await chrome.tabs.remove(rewardTab.id).catch(() => {})} catch {}
 }
+
+export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"

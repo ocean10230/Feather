@@ -131,8 +131,8 @@ export const Alarms = {
   ClaimPoints: "claim_points"
 }
 
-export const Message = `[ \${extension_name} \${extension_version} ] – [ Note ]
-This extension is built purely with dedication and does not collect any data for analysis/purposes.
+export const Message = `[ \${extension_name} \${extension_version} ] – [ Note ]\n
+This extension is built purely with dedication and does not collect any data for analysis/purposes.\n
 If you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!
 `
 
@@ -191,7 +191,31 @@ export const InitializeSpoofing = async () => {
                     ]
                 },
                 condition: {
-                    urlFilter: "||bing.com", // Matches all URLs. Narrow this down if you only want specific sites.
+                    urlFilter: "rewards.bing.com", // Matches all URLs. Narrow this down if you only want specific sites.
+                    resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"] // Target pages and network fetches
+                }
+            }
+        ]
+    })
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: [200], 
+        addRules: [
+            {
+                id: 200,
+                priority: 1,
+                action: {
+                    type: "modifyHeaders",
+                    requestHeaders: [
+                        {
+                            header: "Origin",
+                            operation: "set",
+                            value: "https://www.bing.com/"
+                        }
+                    ]
+                },
+                condition: {
+                    urlFilter: "bing.com", // Matches all URLs. Narrow this down if you only want specific sites.
                     resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"] // Target pages and network fetches
                 }
             }

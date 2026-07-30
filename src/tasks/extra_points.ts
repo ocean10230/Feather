@@ -1,6 +1,6 @@
 import { has_tag, log } from "@/expand"
 import { ScriptList } from "@/rewards/utility"
-import { parseData, ParseClaimPointsNextActionID, parseRouterTree } from "@/rewards/component"
+import { ParseActionId, parseData, RouterTree } from "@/rewards/component"
 import { TaskResponse } from "@/task-response"
 
 export default async (): Promise<TaskResponse> => {
@@ -33,14 +33,37 @@ export default async (): Promise<TaskResponse> => {
         return TaskResponse.ParseFailure
       }
 
-      const claim_action_id = await ParseClaimPointsNextActionID(pageData, dpl) || "Unknown"
+      const claim_action_id = await ParseActionId(pageData, dpl, "ClaimPoints", ["PointsClaimSidePanel", "earnMoreCta"]) || "Unknown"
       
       if (!claim_action_id || claim_action_id === "Unknown") {
         log.claim_points("Failed to parse claim action ID, aborting...")
         return TaskResponse.ParseFailure
       }
 
-      const stateRouterTree = await parseRouterTree(parsedHtml)
+      log.claim_points("Claiming unclaimed", parsed_points, " points...")
+
+      const claimResponse = await fetch("https://rewards.bing.com/dashboard", {
+        "headers": {
+          "accept": "text/x-component", "content-type": "text/plain;charset=UTF-8",
+          "next-action": claim_action_id, "next-router-state-tree": RouterTree,
+          "x-deployment-id": dpl
+        },
+        referrer: "https://rewards.bing.com/dashboard",
+        body: "[]",
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+      });
+
+      console.log("Claim response:", claimResponse.status)
+    }
+
+    return TaskResponse.Done
+}
+
+/*
+
+    const stateRouterTree = await parseRouterTree(parsedHtml)
       log.activities(stateRouterTree)
 
       const Nodify = (segment: string, val: any, isRoot = false): [ any, any, null, null, number ] => {
@@ -63,23 +86,4 @@ export default async (): Promise<TaskResponse> => {
       const routerStateTree = ParseTree(stateRouterTree)
       const encodedStateTree = encodeURIComponent(JSON.stringify(routerStateTree))
 
-      log.claim_points("Claiming unclaimed", parsed_points, " points...")
-
-      const claimResponse = await fetch("https://rewards.bing.com/dashboard", {
-        "headers": {
-          "accept": "text/x-component", "content-type": "text/plain;charset=UTF-8",
-          "next-action": claim_action_id, "next-router-state-tree": encodedStateTree,
-          "x-deployment-id": dpl
-        },
-        referrer: "https://rewards.bing.com/dashboard",
-        body: "[]",
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
-      });
-
-      console.log("Claim response:", claimResponse.status)
-    }
-
-    return TaskResponse.Done
-  }
+*/

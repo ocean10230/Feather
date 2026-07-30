@@ -1,6 +1,6 @@
 import { has_tag, sleep, log } from "@/expand"
 import { Storage, StorageKeys, date } from "@/rewards/utility"
-import { parseData, FetchPage, postQuest } from "@/rewards/component"
+import { parseData, FetchPage, RouterTree, ParseActionId } from "@/rewards/component"
 import { TaskResponse } from "@/task-response"
 
 export default  async (): Promise<TaskResponse> => {
@@ -34,23 +34,33 @@ export default  async (): Promise<TaskResponse> => {
 
     if (formattedList.length < 1) return TaskResponse.Confirm
     log.activities("Faking activities completion")
+
+    const res = await fetch("https://rewards.bing.com/dashboard")
+    const text = await res.text();
+    const dpl = text.split("?dpl=")[1].split("\"")[0]
+
+    const action_id = await ParseActionId(text, dpl, "ActivitiesClaimPoints", `)(["cursor-pointer"]`) as string
     
     // more bimbimbambam
-    const rewardTab = await chrome.tabs.create({ url: "https://rewards.bing.com/earn", active: !1 })
-    if (!rewardTab.id) return TaskResponse.BrowserError
-    await sleep(3 * 1000);
-
-    await chrome.tabs.sendMessage(rewardTab.id, {
-      type: "CHANGE_TITLE",
-      value: "Completing quests – Do not close"
-    })
-    
     for (const quest of formattedList) {
-      await postQuest(rewardTab.id, quest);
-      await sleep(500 + (Math.random() * 500))
+        await fetch("https://rewards.bing.com/earn", {
+            headers: {
+                accept: "text/x-component",
+                "accept-language": "en-US,en;q=0.9,vi-VN;q=0.8,vi;q=0.7",
+                "content-type": "text/plain;charset=UTF-8",
+                "next-action": action_id,
+                "next-router-state-tree": RouterTree,
+                priority: "u=1, i"
+            },
+            referrer: "https://rewards.bing.com/earn",
+            body: quest,
+            method: "POST",
+            credentials: "include"
+        })
+
+        await sleep(500 + (Math.random() * 500))
     }
-    await sleep(2000)
-    await chrome.tabs.remove([rewardTab.id])
-    
+
+
     return TaskResponse.Done
   }
