@@ -6,6 +6,7 @@ import { log, sleep } from "@/expand.ts"
 import pc_search from "@/tasks/searches.ts"
 import extra_points from "@/tasks/extra_points.ts"
 import activities from "@/tasks/activities.ts"
+import daily_set from "./tasks/daily_set"
 
 let initialized = false
 
@@ -22,6 +23,7 @@ const init = async () => {
   await Register({ name: Alarms.Activties, interval: 2, handler: activities })
   await Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search })
   await Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points })
+  await Register({ name: Alarms.DailySet, interval: 25, handler: daily_set })
 
   const storedToday = await Storage.get(StorageKeys.Today) as QuestDateFormat
   const currentDate = date()
@@ -32,6 +34,7 @@ const init = async () => {
     await Promise.all([
       Storage.set(StorageKeys.Today, date()),
       Storage.set(StorageKeys.ActivitiesCompletion, false),
+      Storage.set(StorageKeys.DailySetCompletion, false),
       Storage.set(StorageKeys.SearchCompletion, false),
     ])
   }

@@ -62,12 +62,13 @@ export const parseRouterTree = (data: NextFlightData) => {
 
 ///
 
-let CachedPage;
+const Cached: Record<string, NextFlightData> = {}
 
-export const FetchPage = async (): Promise<NextFlightData> => {
+export const FetchPage = async (page: string = "https://rewards.bing.com/earn"): Promise<NextFlightData> => {
     try {
-        if (CachedPage) return CachedPage;
-        return ScriptList( await (await fetch("https://rewards.bing.com/earn")).text() );
+        if (Cached[page]) return Cached[page]
+        else Cached[page] = ScriptList( await (await fetch(page)).text() )
+        return Cached[page];
     }
     catch (e) {
         console.error("Failed to fetch page:", e)

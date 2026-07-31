@@ -7,23 +7,23 @@ export default async (): Promise<TaskResponse> => {
     if (has_tag("ignore_activities"))
       return TaskResponse.Ignored
     
-    const completed = await Storage.get(StorageKeys.ActivitiesCompletion)
+    const completed = await Storage.get(StorageKeys.DailySetCompletion)
     if (completed == true) return TaskResponse.Confirm
 
     log.activities("Getting activities")
-    const pageData = await FetchPage()
+    const pageData = await FetchPage("https://rewards.bing.com/dashboard")
 
     if (!pageData) return TaskResponse.ParseFailure
 
     log.activities("Parsing activities list from HTML")
     const arr = Array.isArray
-    const parsed_activities = await parseData(pageData, "MoreActivities")
+    const parsed_activities = await parseData(pageData, "\"Daily set\"")
     const activities = (parsed_activities.children as Array<Record<string, any>>)?.at(-1)?.activityCards
 
     // validate data
-    log.activities("Validating activities list")
+    log.activities("Validating daily activities list")
     if (!arr(activities)) return TaskResponse.InvalidInformation
-    log.activities("Filtering activities list")
+    log.activities("Filtering daily activities list")
 
     // bimbimbabmbam
     const combinedList = [...activities]

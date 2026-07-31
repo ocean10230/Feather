@@ -10,6 +10,7 @@ export const StorageKeys = {
     SearchCompletion: "Today_SearchCompleted",
     MobileSearchCompletion: "Today_MobileSearchCompleted",
     ActivitiesCompletion: "Today_ActivitiesCompletion",
+    DailySetCompletion: "Today_DailySetCompletion",
 
     MobileSearchRulesetId: "MobileSearchRulesetId",
     ClaimPointsRulesetId: "ClaimPointsRulesetId",
@@ -160,7 +161,7 @@ export const pcall = async <T>(func: () => Promise<T> | T): Promise<[T | any, bo
 export const Alarms = {
   Activties: "activities",
   PCSearch: "pc_search",
-  MobileSearch: "mobile_search",
+  DailySet: "daily_set",
   ClaimPoints: "claim_points"
 }
 
