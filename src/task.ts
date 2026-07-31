@@ -1,12 +1,12 @@
 import { log } from "@/expand";
-import { Storage } from "@/rewards/utility"
-import { TaskResponse } from "@/task-response"
+import { TaskResponse, TaskRegistrationStatus } from "@/task-response"
 
 const RegisteredTasks = new Map<string, TaskRegistration>()
 
 export const Register = async (task: TaskRegistration) => {
-    if (await Storage.get(`TASK-${task.name}-COMPLETION`) === true) return TaskRegistrationStatus.AlreadyDone
     if (RegisteredTasks.has(task.name)) return TaskRegistrationStatus.Taken
+
+    log.task("Registering task:", task.name)
 
     try {
         await chrome.alarms.create(task.name, { periodInMinutes: task.interval })
@@ -35,14 +35,11 @@ export const Remove = async (task: string): Promise<TaskRemovalStatus> => {
     return TaskRemovalStatus.Success
 }
 
-export const ClearTaskStatus = async () => {
-    const UnclearedTaskStatus = Array.from(RegisteredTasks.keys())
-    await Promise.all(UnclearedTaskStatus.map(task => Storage.set(`TASK-${task}-COMPLETION`, false)))
-}
-
-
 export const Listen = () => {
-    for (const task of RegisteredTasks.values()) void task.handler()
+    for (const task of RegisteredTasks.values()) {
+        log.task("Triggering handler of task", task.name)
+        void task.handler()
+    }
 
     chrome.alarms.onAlarm.addListener(async PendingTask => {
         const Task = RegisteredTasks.get(PendingTask.name)
@@ -51,7 +48,6 @@ export const Listen = () => {
             if (Task.done) {
                 RegisteredTasks.delete(Task.name)
                 await chrome.alarms.clear(Task.name)
-                
                 return
             }
 
@@ -62,7 +58,6 @@ export const Listen = () => {
                     log.task(`Task "${Task.name}" is done. Attempt clearing out...`)
                     RegisteredTasks.delete(Task.name)
                     await chrome.alarms.clear(Task.name)
-                    await Storage.set(`TASK-${Task.name}-COMPLETION`, true)
                     break
                 case TaskResponse.Done:
                     log.task(`Task "${Task.name}" is done. Awaiting confirmation`)

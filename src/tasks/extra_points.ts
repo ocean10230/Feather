@@ -24,7 +24,7 @@ export default async (): Promise<TaskResponse> => {
 
     log.claim_points("Parsed points:", parsed_points, "Claimable:", clickable)
 
-    if (true) {
+    if (clickable && parsed_points > 0) {
       log.claim_points("Getting required paramenters...")
       const dpl = pageData.split("?dpl=")[1].split("\"")[0]
       

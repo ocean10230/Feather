@@ -60,19 +60,6 @@ export const parseRouterTree = (data: NextFlightData) => {
 
 */
 
-export const postQuest = async (tabid: number, quest: QuestData) =>
-
-await chrome.tabs.sendMessage(tabid, {
-    type: "COMPLETE_QUEST",
-    data: JSON.stringify([
-        quest.hash, 11, {
-            isPromotional: quest.isPromotional,
-            offerid: quest.offerId,
-            timezoneOffset: `${new Date().getTimezoneOffset()}`
-        }
-    ])
-})
-
 ///
 
 let CachedPage;
@@ -149,12 +136,19 @@ export const ParseActionId = async (
     const chunk_list = await Storage.get(StorageKeys.WebpackBundleCache) as string
     const chunks = JSON.parse(chunk_list)
 
-    const all_chunks = Object.values(chunks)
-    const res_list = await Promise.all( all_chunks.map(chunk_data => fetch(`https://rewards.bing.com/_next/static/chunks/${chunk_data}?dpl=${deployment_id}`)) )
+    const res_list = await Promise.all( Object.keys(chunks).map(chunk_data => fetch(`https://rewards.bing.com/_next/static/chunks/${chunk_data}?dpl=${deployment_id}`)) )
     const parsed_webpack_bundle = await Promise.all( res_list.map(promise => promise.text()) )
 
-    const parses_action_id = (script: string) => {
-        return script.split(`createServerReference)("`)[1].split(`"`)[0]
+    const parses_action_id = (script: string): string | "Unknown" => {
+        const match = script.match(/createServerReference\)\(["']([^"']+)["']/)
+        return match ? match[1] : "Unknown"
+    }
+
+    const process_id = async (bundle_js: string) => {
+        const parsed = parses_action_id(bundle_js)
+        await Storage.set(key, parsed)
+        if (parsed == "Unknown") log.activities("Failed to parse action id of", action_name)
+        return parsed
     }
 
     for (const webpack_bundle of parsed_webpack_bundle) {
@@ -162,17 +156,11 @@ export const ParseActionId = async (
 
         if (Array.isArray(keywords)) {
             for (const keyword of keywords)
-                if (webpack_bundle.includes(keyword)) {
-                    const parsed = parses_action_id(key)
-                    await Storage.set(key, parsed)
-                    return parsed
-                }
+                if (webpack_bundle.includes(keyword))
+                    return await process_id(webpack_bundle)
         }
-        else if (webpack_bundle.includes(keywords)) {
-            const parsed = parses_action_id(key)
-            await Storage.set(key, parsed)
-            return parsed
-        }
+        else if (webpack_bundle.includes(keywords))
+            return await process_id(webpack_bundle)
     }
 
     return "NOT_FOUND"

@@ -1,15 +1,13 @@
 import { Storage, StorageKeys, Alarms, date, Message, CleanUp, InitializeSpoofing } from "@/rewards/utility.ts"
-import { ClearTaskStatus, Listen, Register } from "@/task.ts"
+import { Listen, Register } from "@/task.ts"
 import { RefreshSession} from "@/rewards/component.ts"
-import { log } from "@/expand.ts"
+import { log, sleep } from "@/expand.ts"
 
 import pc_search from "@/tasks/searches.ts"
 import extra_points from "@/tasks/extra_points.ts"
 import activities from "@/tasks/activities.ts"
 
 let initialized = false
-
-const get_self = () => self
 
 const init = async () => {
   if (initialized) return
@@ -19,18 +17,22 @@ const init = async () => {
   await RefreshSession()
   await InitializeSpoofing()
 
+  await sleep(200)
+
   await Register({ name: Alarms.Activties, interval: 2, handler: activities })
   await Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search })
   await Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points })
 
-  if (await Storage.get(StorageKeys.Today) as QuestDateFormat !== date()) {
+  const storedToday = await Storage.get(StorageKeys.Today) as QuestDateFormat
+  const currentDate = date()
+
+  if (storedToday !== currentDate) {
     log.initlialize("Detected date change, resetting progress")
 
     await Promise.all([
       Storage.set(StorageKeys.Today, date()),
       Storage.set(StorageKeys.ActivitiesCompletion, false),
       Storage.set(StorageKeys.SearchCompletion, false),
-      ClearTaskStatus()
     ])
   }
 
@@ -39,7 +41,7 @@ const init = async () => {
 }
 
 chrome.runtime.onStartup.addListener(() => { void init() })
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   const manifest = chrome.runtime.getManifest();
   console.error(Message.replace('\${extension_version}', manifest.version).replace('\${extension_name}', manifest.name))
   void init()

@@ -1,3 +1,5 @@
+import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "./search_generation"
+
 export const Storage = {
   async get(key: string): Promise<StorageData> { return (await chrome.storage.local.get(key))[key] as StorageData },
   set(key: string, value: StorageData) {return chrome.storage.local.set({ [key]: value })}
@@ -28,11 +30,6 @@ export const GetSearches = () => {
 
     const year = new Date().getFullYear()
 
-    const games = ['resident evil','roblox','gta','gta v','gta iv','gta sa','gta liberty city','gta vc','gta vc stories','gta iii','gta ii','gta i','forza','forza 5','forza 6','ets2','csgo','cs source','cod','rdr','rdr2','gta+','gamepass','xbox','minecraft','robux','roblox pets','world of warcraft','final fantasy','guild wars','lol','dota 2','the sims 4','animal crossing','stardew valley','cyberpunk 2077','elden rings','witcher 3','super smash bros','brawlhalla','fortnite','apex legends','valorant','battlefield 2042','spellforce arena','black desert online','runescape','maple story','phantasy star online 2','smite','heroes of the storm','mobile legends','vainglory','arena of valor','crystal of atlan','terraria','garden paws','eco','my time at portia','skyrim','horizon forbidden west','diablo 4','geometry dash','gta online','hollow knight','silksong','hollow knight silksong','internet cafe simulator','subnautica','subnautica below zero','ark survival evolved','the forest','the long dark','no mans sky','sea of thieves','valheim','rust','7 days to die','dayz','fall guys','among us']
-    const socialMedias = ["facebook","instagram","twitter","tiktok","snapchat","linkedin","youtube","reddit","pinterest","tumblr","discord","twitch","clubhouse","mastodon","bluesky","threads","wechat","qq","qzone","line","kakaotalk","viber","telegram","signal","whatsapp","messenger","weibo","douyin","vk","odnoklassniki","mixi","baidu tieba","nextdoor","peach","ello","diaspora","minds","steemit","gab","parler","truth social","gettr","rumble","mewe","yubo","caffeine","dlive","trovo","bitchute","vimeo","flickr","deviantart","dribbble","behance","goodreads","letterboxd","anilist","myanimelist","gaia online","habbo hotel","imvu","second life","roblox","steam community","epic games social","battle.net","xbox live","playstation network","newgrounds","soundcloud","bandcamp","audius","last.fm","reverbnation","mixcloud","kik","amino","fanpop","ravelry","couchsurfing","meetup","care2","researchgate","academia.edu","stack overflow","github","gitlab","codepen","dev.to","hashnode","product hunt","angel list","indie hackers","quora","medium","substack","kickstarter","gofundme","patreon","go fund me"]
-    const gamesWithMaps = ["minecraft","elden ring","skyrim","gta v","sea of thieves","among us","ark: survival evolved","rust","valheim","terraria","no man's sky","subnautica","the forest","dayz","7 days to die","apex legends","fortnite","battlefield 2042","dota 2","league of legends","smite","world of warcraft","final fantasy xiv","guild wars 2","black desert online","runescape","path of exile","diablo iv","monster hunter world","far cry 6","just cause 4","watch dogs 2","cyberpunk 2077","geometry dash","gta san andreas","gta vice city","gta iv","gta iii","forza horizon 5","ets2","red dead redemption 2"]
-    const toBe = ["successful","productive","good at something","cool","rich","a billionare","a millionare","a trillionare","rich guy","motivated","sigma","gooning","touching grass"]
-
     const expand = (
         items: string[],
         bases: ((s: string) => string)[],
@@ -48,15 +45,16 @@ export const GetSearches = () => {
     const gameBases: ((g: string) => string)[] = [
         g=>g, g=>`${g} giveaway`,g=>`${g} tips`,g=>`${g} tricks`,
         g=>`${g} best mods`, g=>`${g} best glitches`, g=>`${g} best money trick`,
-        g=>`${g} download`,g=>`${g} download tutorial`, g=>`${g} cheats`,g=>`${g} hacks cheats`,
-        g=>`${g} cheats hacks`, g=>`${g} cheats`, g=>`${g} external cheats`, g=>`${g} trainers`
+        g=>`${g} download`,g=>`${g} download tutorial`, g=>`${g} cheats`, g=>`${g} cheats`,
+        g=>`${g} external cheats`, g=>`${g} trainers`,
+        g=>`${g} with cheat engines`, g=>`${g} becnmarks`, g=>`${g} mods`, g=>`${g} essentials`,
+        g=>`${g} download free`, g=>`${g} installation guide`, g=>`${g} installi guide`
     ]
 
     const gameExtra: ((g: string) => string)[] = [ g => `how to download ${g}`, g => `how to get ${g}`, g => `how to play ${g}` ]
     const mapBases: ((g: string) => string)[] = [ g => `${g} map`, g => `${g} maps`, g => `${g} best map`, g => `${g} best maps` ]
 
     const socialBases: ((s: string) => string)[] = [
-        s => s, s => `wtf is ${s}`,
         s => `what is ${s}`, s => `who founded ${s}`,
         s => `when was ${s} founded`, s => `explain how ${s} works im a caveman`,
 
@@ -65,13 +63,9 @@ export const GetSearches = () => {
 
         s => `why does ${s} suck`,
         s => `is ${s} dead`,
-        s => `is ${s} worth using`,
-        s => `why is everyone using ${s}`,
-        s => `how do i stop using ${s}`,
 
         s => `how to get more ${s} followers`,
         s => `how to get more ${s} audiences`,
-        s => `how to get more ${s} subscribers`,
         s => `how to get more ${s} views`,
 
         s => `how to get more audience on ${s}`,
@@ -79,36 +73,75 @@ export const GetSearches = () => {
 
         s => `how to go viral on ${s}`,
         s => `best ${s} alternatives`,
-        s => `best ${s} tips`,
-        s => `best ${s} tricks`,
-        s => `best ${s} hacks`,
-
-        s => `best way to get followers ${s}`,
-        s => `best way to get likes ${s}`,
-        s => `best way to get viral videos ${s}`,
-        s => `best way to get more audience ${s}`,
+        s => `best ${s} tips to go viral`,
 
         s => `how to use ${s} effectively`,
         s => `how to use ${s} safely`,
-        s => `how to use ${s} for marketing`,
-        s => `how to use ${s} for advertising`,
 
         s => `how to deal with stupid people on ${s}`,
         s => `best way to deal with stupid people on ${s}`,
         s => `how to recover from doomscrolling on ${s}`
-        ]
-
-        const beingBases: ((g: string) => string)[] = [
-        g => `smart ways to be ${g}`, g => `best way to be ${g}`,
-        g => `how to be ${g}`, g => `how to actually be ${g}`,
-        g => `pros of being ${g}`, g => `how hard is it to be ${g}`
     ]
+
+    const beingBases: ((g: string) => string)[] = [
+        g => g, g => `smart ways to be ${g}`, g => `best way to be ${g}`,
+        g => `how to be ${g}`, g => `how to actually be ${g}`,
+        g => `pros of being ${g}`, g => `how hard is it to be ${g}`,
+        g => `how to be ${g} quickly`, g => `smart and easy ways to be ${g} quickly`
+    ]
+
+    const phone_storage_capacity = ["256GB", "512GB"];
+    const phone_colors = ["Black", "White"];
+    const phone_conditions = ["new", "refurbished"];
+
+    const search_suffixes = [
+        "",
+        "price", "review", "release date",
+        "is still worth buying today",
+        "is worth buying nowadays",
+    ];
+
+    const phones_related: ((g: string) => string[])[] = [
+        g => {
+            const results: string[] = [];
+
+            for (const condition of phone_conditions)
+            for (const storage of phone_storage_capacity)
+            for (const color of phone_colors)
+            for (const suffix of search_suffixes) {
+                const phone = [
+                    condition,
+                    g,
+                    storage,
+                    color,
+                ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                results.push(
+                    suffix.startsWith("what is")
+                        ? `${suffix} ${phone}`
+                        : suffix.startsWith("when was")
+                        ? `${suffix} ${phone}`
+                        : suffix.startsWith("is ")
+                        ? `${suffix} ${phone}`
+                        : suffix
+                        ? `${phone} ${suffix}`
+                        : phone
+                );
+            }
+
+            return [...new Set(results)];
+        },
+    ];
 
     data.push(
         ...expand(games, gameBases, gameExtra),
         ...expand(socialMedias, socialBases),
         ...expand(gamesWithMaps, [...mapBases, ...gameBases], gameExtra),
-        ...toBe.flatMap(b => beingBases.map(fn => fn(b)))
+        ...expand(components_base, hardwareBases),
+        ...toBe.flatMap(b => beingBases.map(fn => fn(b))),
+        ...phones.flatMap(phone => phones_related.map(f => f(phone)).flat())
     )
 
     return data
@@ -171,54 +204,48 @@ export const CleanUp = async () => {
     log.initlialize("Cleaned up old rules:", ruleIds)
 }
 
+const MaskHeader = (header: string, value: string): chrome.declarativeNetRequest.ModifyHeaderInfo => ({
+    header, value, operation: "set"
+})
+
 export const InitializeSpoofing = async () => {
     log.initlialize("Creating new rules to spoof origin")
 
-    await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [100], 
-        addRules: [
-            {
-                id: 100,
-                priority: 1,
-                action: {
-                    type: "modifyHeaders",
-                    requestHeaders: [
-                        {
-                            header: "Origin",
-                            operation: "set",
-                            value: "https://rewards.bing.com/"
-                        }
-                    ]
-                },
-                condition: {
-                    urlFilter: "rewards.bing.com", // Matches all URLs. Narrow this down if you only want specific sites.
-                    resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"] // Target pages and network fetches
-                }
+    const rules: ModifyHeaderDNR[] = [
+        {
+            action: {
+                type: "modifyHeaders",
+                requestHeaders: [
+                    MaskHeader("Origin", "https://rewards.bing.com/")
+                ]
+            },
+            condition: {
+                regexFilter: "^https://(www\\.)?rewards\\.bing\\.com/",
+                resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"]
             }
-        ]
-    })
+        },
+
+        {
+            action: {
+                type: "modifyHeaders",
+                requestHeaders: [
+                    MaskHeader("Origin", "https://bing.com/")
+                ]
+            },
+            condition: {
+                regexFilter: "^https://(www\\.)?bing\\.com/",
+                resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"]
+            }
+        }
+    ]
+
+    const filtered_rules: chrome.declarativeNetRequest.Rule[] = rules.map((rule, index) => ({
+        ...rule,
+        id: index + 1,   // DNR rule IDs must be positive integers
+        priority: 1
+    }));
 
     await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [200], 
-        addRules: [
-            {
-                id: 200,
-                priority: 1,
-                action: {
-                    type: "modifyHeaders",
-                    requestHeaders: [
-                        {
-                            header: "Origin",
-                            operation: "set",
-                            value: "https://www.bing.com/"
-                        }
-                    ]
-                },
-                condition: {
-                    urlFilter: "bing.com", // Matches all URLs. Narrow this down if you only want specific sites.
-                    resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"] // Target pages and network fetches
-                }
-            }
-        ]
+        addRules: filtered_rules
     })
 }

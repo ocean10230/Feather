@@ -5,6 +5,9 @@
     "lib": ["ES2023", "DOM"],
     "types": ["vite/client","chrome"],
     "skipLibCheck": true,
+    "plugins": [
+      { "transform": "./transform.cjs" }
+    ],
 
     /* Bundler mode */
     "moduleResolution": "bundler",

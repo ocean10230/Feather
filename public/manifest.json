@@ -2,7 +2,16 @@
   "name":"Rewards Automator",
   "version":"2.3.0",
   "description":"self-explainatory, debug version – not production",
-  "content_scripts":[{"matches":["*://*.bing.com/*","*://bing.com/*"],"js":["scripts/cors.js"],"run_at":"document_idle"},{"matches":["*://*.bing.com/*","*://bing.com/*"],"js":["scripts/cors.js"],"run_at":"document_end"}],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.bing.com/*"
+      ],
+      "js": ["scripts/cors.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
   "icons":{"16":"icon.png","32":"icon.png","48":"icon.png","128":"icon.png"},
   "permissions": [
     "scripting",
