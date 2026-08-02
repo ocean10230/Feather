@@ -48,11 +48,9 @@ Here is a step by step guide on how to build the extension yourself (if you have
 
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/your-username/feather.git](https://github.com/your-username/feather.git)
+   git clone https://github.com/ocean10230/feather
    cd feather
    ```
-
-  If you don't have git. Just download the source code from this repository
    
 2. Build the project
    ```bash
