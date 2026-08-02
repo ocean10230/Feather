@@ -1,7 +1,24 @@
 {
+  "manifest_version": 3,
   "name": "Feather",
   "version": "2.3.0",
-  "description": "Feather is a powerful Microsoft Rewards macro that automate your daily tasks silently in the background every day",
+  "description": "Feather is a powerful Microsoft Rewards macro that automates your daily tasks silently in the background every day.",
+  "author": "randomproject",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "feather-rewards@randomproject",
+      "strict_min_version": "109.0"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "background": {
+    "scripts": ["scripts/background.js"]
+  },
   "content_scripts": [
     {
       "matches": [
@@ -12,20 +29,18 @@
       "all_frames": true
     }
   ],
-  "icons": {"16":"icon.png","32":"icon.png","48":"icon.png","128":"icon.png"},
   "permissions": [
     "scripting",
     "storage",
     "alarms",
-    "declarativeNetRequest",
-    "declarativeNetRequestFeedback"
+    "declarativeNetRequest"
   ],
   "host_permissions": [
     "*://*.bing.com/*",
     "*://bing.com/*"
   ],
-  "action": { "default_popup":"index.html","default_title":"Automator" },
-  "manifest_version": 3,
-  "background": {"service_worker":"scripts/background.js"},
-  "author": "Ocean"
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Automator"
+  }
 }

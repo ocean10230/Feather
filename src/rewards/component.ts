@@ -6,7 +6,7 @@ import { ScriptList } from "./utility.ts"
 export const parseData = async (
   data?: string,
   keyword?: string | string[],
-  multiple = false, and = false
+  multiple = false
 ): Promise<any | any[] | null> => {
   const [res, suc] = await pcall(() => {
     if (!data || !keyword) return null
@@ -16,7 +16,6 @@ export const parseData = async (
     .map((line, index) => ({ line, index }))
     .filter(({ line }) => {
         if (!Array.isArray(keyword)) return line.includes(keyword)
-        if (and) return keyword.every(k => line.includes(k))
         return keyword.some(k => line.includes(k))
     })
 

@@ -169,34 +169,36 @@ export const Alarms = {
   Quests: "quests"
 }
 
-export const Message = `[ \${extension_name} \${extension_version} ] – [ Note ]\n
-This extension is built purely with dedication and does not collect any data for analysis/purposes.\n
-If you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!
-`
-
-import { DOMParser } from "linkedom"
+export const Message = "[ \${extension_name} \${extension_version} ] – [ Note ]\nThis extension is built purely with dedication and does not collect any data for analysis/purposes.\nIf you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!"
 
 export const ScriptList = (html: string): NextFlightData => {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(html, 'text/html')
-  const scripts = doc.querySelectorAll("script")
-  const scriptList: NextFlightData[] = []
-  
-  scripts.forEach((element: HTMLScriptElement) => {
-    if (element.innerHTML.includes("__next_f")) {
-      const str = element.innerHTML
-      const match = str.match(/self\.__next_f\.push\((\[.*?\])\)/s)
+  const scriptList: string[] = [];
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+  let scriptMatch: RegExpExecArray | null;
 
-      if (!match) return
-      const dataString = match[1]
+  while ((scriptMatch = scriptRegex.exec(html)) !== null) {
+    const scriptContent = scriptMatch[1];
 
-      if (!dataString) return
-      scriptList.push(JSON.parse(dataString).at(-1))
+    if (scriptContent.includes("__next_f")) {
+      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s);
+
+      if (!match || !match[1]) continue;
+
+      try {
+        const parsedArray = JSON.parse(match[1]);
+        const lastItem = parsedArray[parsedArray.length - 1];
+
+        if (lastItem) {
+          scriptList.push(lastItem);
+        }
+      } catch {
+        continue;
+      }
     }
-  })
+  }
 
-  return scriptList.join("\n") as NextFlightData
-}
+  return scriptList.join("\n") as NextFlightData;
+};
 
 export const date=(d=new Date): QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
 
