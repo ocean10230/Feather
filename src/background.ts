@@ -7,6 +7,7 @@ import pc_search from "@/tasks/searches.ts"
 import extra_points from "@/tasks/extra_points.ts"
 import activities from "@/tasks/activities.ts"
 import daily_set from "./tasks/daily_set"
+import quests from "./tasks/quests"
 
 let initialized = false
 
@@ -24,6 +25,7 @@ const init = async () => {
   await Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search })
   await Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points })
   await Register({ name: Alarms.DailySet, interval: 25, handler: daily_set })
+  await Register({ name: Alarms.Quests, interval: 25, handler: quests })
 
   const storedToday = await Storage.get(StorageKeys.Today) as QuestDateFormat
   const currentDate = date()

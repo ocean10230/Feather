@@ -24,6 +24,9 @@ export const StorageKeys = {
     WebpackVersion: "WebpackDeploymentId",
     DeploymentId: "DeploymentId",
     ClaimPointsNextActionId: "ClaimPointsNextActionId",
+
+    QuestsCompletion: "QuestsCompletion",
+    ActionCompletionDelay: "QuestsActionCompletionDelayedTo"
 }
 
 export const GetSearches = () => {
@@ -162,7 +165,8 @@ export const Alarms = {
   Activties: "activities",
   PCSearch: "pc_search",
   DailySet: "daily_set",
-  ClaimPoints: "claim_points"
+  ClaimPoints: "claim_points",
+  Quests: "quests"
 }
 
 export const Message = `[ \${extension_name} \${extension_version} ] – [ Note ]\n
@@ -249,4 +253,9 @@ export const InitializeSpoofing = async () => {
     await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: filtered_rules
     })
+
+    const res = await fetch("https://rewards.bing.com/dashboard")
+    const text = await res.text()
+    const deployment_id = text.split("?dpl=")[1].split("\"")[0]
+    await Storage.set(StorageKeys.DeploymentId, deployment_id)
 }

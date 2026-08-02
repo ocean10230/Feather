@@ -37,7 +37,7 @@ export const Remove = async (task: string): Promise<TaskRemovalStatus> => {
 
 export const Listen = () => {
     for (const task of RegisteredTasks.values()) {
-        log.task("Triggering handler of task", task.name)
+        log.task("Triggering handler of ", task.name)
         void task.handler()
     }
 

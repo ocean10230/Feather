@@ -1,5 +1,5 @@
 import { has_tag, log } from "@/expand"
-import { ScriptList } from "@/rewards/utility"
+import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
 import { ParseActionId, parseData, RouterTree } from "@/rewards/component"
 import { TaskResponse } from "@/task-response"
 
@@ -26,7 +26,7 @@ export default async (): Promise<TaskResponse> => {
 
     if (clickable && parsed_points > 0) {
       log.claim_points("Getting required paramenters...")
-      const dpl = pageData.split("?dpl=")[1].split("\"")[0]
+      const dpl = await Storage.get(StorageKeys.DeploymentId) as string | None
       
       if (!dpl) {
         log.claim_points("Failed to parse deployment ID, aborting...")

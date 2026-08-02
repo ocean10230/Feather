@@ -17,11 +17,12 @@ export default async (): Promise<TaskResponse> => {
 
     log.activities("Parsing activities list from HTML")
     const arr = Array.isArray
-    const parsed_activities = await parseData(pageData, "\"Daily set\"")
-    const activities = (parsed_activities.children as Array<Record<string, any>>)?.at(-1)?.activityCards
+    const parsed_activities = await parseData(pageData, `\"DailySetSection\"`)
+    const activities = parsed_activities.children[3].dailySetItems
 
     // validate data
-    log.activities("Validating daily activities list")
+    log.activities("Validating daily activities list", parsed_activities, )
+
     if (!arr(activities)) return TaskResponse.InvalidInformation
     log.activities("Filtering daily activities list")
 
