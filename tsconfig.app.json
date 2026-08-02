@@ -23,7 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "src/*": ["./src/*"],
-      "@/*": ["../rewards/src"]
+      "@/*": ["../rewards/public/*"]
     }
   },
   "include": ["src"]
