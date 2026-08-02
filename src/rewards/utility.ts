@@ -1,8 +1,34 @@
 import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "./search_generation"
 
+const isExtension = !!chrome.storage
+
 export const Storage = {
-  async get(key: string): Promise<StorageData> { return (await chrome.storage.local.get(key))[key] as StorageData },
-  set(key: string, value: StorageData) {return chrome.storage.local.set({ [key]: value })}
+    async get(key: string): Promise<StorageData> {
+        if (isExtension)
+            return (await chrome.storage.local.get(key))[key] as StorageData
+        else {
+            const data = localStorage.getItem(key) as StorageData
+            
+            try {
+                return JSON.parse(data as string) as StorageData
+            }
+            catch {
+                return data
+            }
+        }
+    },
+    async set(key: string, value: StorageData): Promise<void> {
+        if (isExtension)
+            await chrome.storage.local.set({ [key]: value })
+        else {
+            try {
+                localStorage.setItem(key, JSON.stringify(value))
+            }
+            catch {
+                localStorage.setItem(key, !!value ? String(value) : value as string)
+            }
+        }
+    }
 }
 
 export const StorageKeys = {
