@@ -1,9 +1,11 @@
 import "./App.css"
 import Icon from "../../rewards/public/icon.png"
+import { motion, useSpring, useTransform } from "framer-motion";
+import { useEffect } from "react";
 
 const check = (
   <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
-    <path d="M5 13l4 4L19 7" stroke="#04241a" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M5 13l4 4L19 7" stroke="#ffffff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -18,6 +20,40 @@ const bolt = (stroke: string, sw = 7) => (
     />
   </svg>
 );
+
+function AnimatedNumber({ value }: { value: number }) {
+  const spring = useSpring(0, { bounce: 0, duration: 1200 })
+  const rounded = useTransform(spring, (latest) => Math.floor(latest).toLocaleString())
+
+  useEffect(() => {
+    spring.set(value)
+  }, [spring, value])
+
+  return <motion.span>{rounded}</motion.span>
+}
+
+export const Tracking = ({ title, unit, value, idx }: { idx: number, title: string, unit: string, value: string | number | boolean | null | undefined }) => {
+  // Check if the value is a valid number for animation
+  const isNumeric = typeof value === 'number' && !isNaN(value)
+
+  return (
+    <div className="flex flex-col gap-1 bg-[#0f1729] px-3 pb-3.75 pt-3.5">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.2, duration: 0.3, ease: [0.0, 0.01, 0.01, 0.95] }}>
+        <div className="text-[11px] font-bold uppercase tracking-wider text-[#69769a]">{title}</div>
+        <div className="font-display bg-linear-to-r from-[#2fe0ff] to-[#3d7bff] bg-clip-text text-[22px] font-bold text-transparent">
+          {/* Animate if numeric, otherwise fallback to standard string rendering */}
+          {isNumeric ? <AnimatedNumber value={value} /> : String(value ?? '')}
+          
+          {unit && (
+            <span className="text-[14px] font-light text-[#69769a] ml-0.5">
+              {unit}
+            </span>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
 
 const Track = ({ pct }: { pct: number }) => (
   <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#141f38]">
@@ -54,28 +90,14 @@ const App = () => {
 
         {/* Overview: Streak / Points / Stamps */}
         <div className="grid grid-cols-2 gap-px border-b border-[#1e2a45] bg-[#1e2a45]">
-          <div className="flex flex-col gap-1 bg-[#0f1729] px-3 pb-3.75 pt-3.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#69769a]">Points</div>
-            <div className="font-display bg-linear-to-r from-[#2fe0ff] to-[#3d7bff] bg-clip-text text-[22px] font-bold text-transparent">
-              2,480
-            </div>
-            <div className="text-[10.5px] text-[#48526c]">+140 today</div>
-          </div>
-          
-          <div className="flex flex-col gap-1 bg-[#0f1729] px-3  pt-3.5">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#69769a]">Streak</div>
-            <div className="font-display text-[22px] font-bold">
-              12<span className="text-[13px] font-semibold text-[#69769a]">d</span>
-            </div>
-            <div className="text-[10.5px] text-[#48526c]">best: 31 days</div>
-          </div>
+          <Tracking idx={0} title="Points" unit="pts" value={2480} />
+          <Tracking idx={1} title="Streak" unit="d" value={12} />
         </div>
 
         {/* Today */}
         <div className="px-5 pt-4.5">
           <div className="mb-3 flex items-center justify-between font-display text-[13px] font-semibold">
             Today
-            <span className="font-sans text-[11px] font-medium text-[#69769a]">resets in 6h 40m</span>
           </div>
 
           <div className="flex items-center gap-3 py-2.5">
@@ -88,14 +110,26 @@ const App = () => {
               <div className="mb-1.5 flex items-baseline justify-between">
                 <span className="text-[12.5px] font-semibold">Offer</span>
                 <span className="font-mono text-[11.5px] text-[#69769a]">
-                  <b className="font-semibold text-[#8af1ff]">80</b> / 100 pts
+                  <b className="font-semibold text-(--text-neon)">80</b> / 100 pts
                 </span>
               </div>
-              <Track pct={80} />
+              <div className="flex gap-1">
+                {[1, 1, 1, 0, 0].map((done, i) => (
+                <div
+                  key={i}
+                  className={
+                    "h-2.5 flex-1 rounded-full border " +
+                    (done
+                      ? "border-transparent bg-linear-to-r from-(--accent) to-(--accent-secondary) shadow-[0_0_8px_-1px_rgba(47,224,255,0.5)]"
+                      : "border-(--disabled-border) bg-(--disabled-bg)")
+                  }
+                />
+              ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border-t border-[#1e2a45] py-2.5">
+          <div className="flex items-center gap-3 border-t border-(--border) py-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-[#1e2a45] bg-[#141f38]">
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                 <circle cx="11" cy="11" r="6" stroke="#2fe0ff" strokeWidth={2} />
@@ -106,15 +140,15 @@ const App = () => {
               <div className="mb-1.5 flex items-baseline justify-between">
                 <span className="text-[12.5px] font-semibold">Searches</span>
                 <span className="font-mono text-[11.5px] text-[#69769a]">
-                  <b className="font-semibold text-[#8af1ff]">24</b> / 30
+                  <b className="font-semibold text-(--text-neon)">24</b> / 30
                 </span>
               </div>
               <Track pct={80} />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border-t border-[#1e2a45] py-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-[#1e2a45] bg-[#141f38]">
+          <div className="flex items-center gap-3 border-t border-(--border) py-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-(--border) bg-[#141f38]">
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                 <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="#33e3a6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -122,13 +156,10 @@ const App = () => {
             <div className="flex flex-1 items-center justify-between gap-2.5">
               <div>
                 <div className="mb-0.5 text-[12.5px] font-semibold">Unclaimed</div>
-                <div className="font-mono text-[11.5px] text-[#69769a]">
-                  <b className="font-semibold text-[#8af1ff]">60</b> pts waiting
+                <div className="font-mono tracking-[-0.15px] text-[11.5px] text-[#758ac4]">
+                  <b className="font-semibold text-(--text-neon)">60 pts</b> queued
                 </div>
               </div>
-              <button className="whitespace-nowrap rounded-full bg-linear-to-r from-[#33e3a6] to-[#1fc48a] px-3.5 py-[7px] font-display text-[11.5px] font-bold text-[#04241a] shadow-[0_4px_14px_-4px_rgba(51,227,166,0.6)] transition-transform hover:-translate-y-px active:translate-y-0">
-                Claim
-              </button>
             </div>
           </div>
         </div>
@@ -144,13 +175,13 @@ const App = () => {
               filled ? (
                 <div
                   key={i}
-                  className="aspect-square flex-1 rounded-lg bg-linear-to-br from-[#3d7bff] to-[#2fe0ff] p-1 shadow-[0_0_12px_-2px_rgba(47,224,255,0.55)]"
+                  className="aspect-square flex-1 rounded-lg bg-linear-to-br from-(--accent) to-(--accent-secondary) p-1 shadow-[0_0_12px_-2px_rgba(47,224,255,0.55)]"
                 >
                   {check}
                 </div>
               ) : (
-                <div key={i} className="relative aspect-square flex-1 rounded-lg border border-[#1e2a45] bg-[#141f38]">
-                  <div className="absolute left-1/2 top-1/2 size-1.25 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#48526c]" />
+                <div key={i} className="relative aspect-square flex-1 rounded-lg border border-(--border) bg-[#141f38]">
+                  <div className="absolute left-1/2 top-1/2 size-1.25 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--disabled-bg)" />
                 </div>
               )
             )}
@@ -190,8 +221,8 @@ const App = () => {
                   className={
                     "h-1.5 flex-1 rounded-full border " +
                     (done
-                      ? "border-transparent bg-linear-to-r from-[#3d7bff] to-[#2fe0ff] shadow-[0_0_8px_-1px_rgba(47,224,255,0.5)]"
-                      : "border-[#1e2a45] bg-[#0f1729]")
+                      ? "border-transparent bg-linear-to-r from-(--accent) to-(--accent-secondary) shadow-[0_0_8px_-1px_rgba(47,224,255,0.5)]"
+                      : "border-(--disabled-border) bg-(--disabled-bg)")
                   }
                 />
               ))}
@@ -199,10 +230,10 @@ const App = () => {
           </div>
 
           {/* Persistence */}
-          <div className="mb-2.5 rounded-2xl border border-[#1e2a45] bg-[#141f38] p-3.5">
+          <div className="mb-2.5 rounded-2xl border border-(--border) bg-[#141f38] p-3.5">
             <div className="mb-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-[26px] w-[26px] items-center justify-center rounded-lg border border-[#2fe0ff]/25 bg-[#2fe0ff]/10">
+                <div className="flex h-[26px] w-[26px] items-center justify-center rounded-lg border border-(--border) bg-(--disabled-bg)">
                   <div className="h-3.5 w-3.5">{bolt("#8af1ff")}</div>
                 </div>
                 <div className="text-[12.5px] font-semibold">
@@ -210,28 +241,28 @@ const App = () => {
                   <span className="mt-0.5 block text-[10.5px] font-medium text-[#69769a]">5 of 7 days active</span>
                 </div>
               </div>
-              <div className="rounded-full border border-[#2fe0ff]/20 bg-[#2fe0ff]/[0.08] px-2 py-[3px] font-mono text-[11px] text-[#8af1ff]">
+              <div className="rounded-full border border-(--border) bg-(--disabled-bg) px-2 py-[3px] font-mono text-[11px] text-(--text-neon)">
                 +120 pts
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               {[1, 2, 3, 4, 5].map((d) => (
-                <div key={d} className="flex h-6 flex-1 items-center justify-center rounded-md bg-linear-to-b from-[#3d7bff] to-[#2fe0ff] p-1">
+                <div key={d} className="flex h-6 flex-1 items-center justify-center rounded-md bg-linear-to-b from-(--accent) to-(--accent-secondary) p-1">
                   {check}
                 </div>
               ))}
               {[6, 7].map((d) => (
-                <div key={d} className="flex h-6 flex-1 items-center justify-center rounded-md border border-[#1e2a45] bg-[#0f1729]">
-                  <span className="text-[9px] font-semibold text-[#48526c]">{d}</span>
+                <div key={d} className="flex h-6 flex-1 items-center justify-center rounded-md border border-(--border) bg-(--disabled-bg)">
+                  <span className="text-[9px] font-semibold text-(--disabled-border)">{d}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Activities */}
-          <div className="rounded-2xl border border-[#1e2a45] bg-[#141f38] p-3.5">
+          <div className="rounded-2xl border border-(--border) bg-[#141f38] p-3.5">
             <div className="mb-1 flex items-center gap-2">
-              <div className="flex h-[26px] w-[26px] items-center justify-center rounded-lg border border-[#2fe0ff]/25 bg-[#2fe0ff]/10">
+              <div className="flex h-[26px] w-[26px] items-center justify-center rounded-lg border border-(--border) bg-(--disabled-bg)">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
                   <path
                     d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"

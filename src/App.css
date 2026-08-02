@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+:root {
+  --accent: #3d7bff;
+  --accent-secondary: #54acff;
+
+  --text-neon: #63ceff;
+
+  --disabled-bg: #0f1729;
+  --disabled-border: #48526c;
+
+  --border: #1e2a45
+}
+
 body {
   background: black;
 }
