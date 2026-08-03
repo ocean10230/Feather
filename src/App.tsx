@@ -1,28 +1,12 @@
 import "./App.css"
-import { motion, useSpring, useTransform } from "framer-motion";
-import { useEffect } from "react";
+import { AnimatePresence, motion, useSpring, useTransform, type Easing } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Header } from "./Components"
 
-const check = (
-  <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
-    <path d="M5 13l4 4L19 7" stroke="#ffffff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+const ease: Easing = [0,0,0,1]
 
-const bolt = (stroke: string, sw = 7) => (
-  <svg viewBox="0 0 100 100" fill="none" className="h-full w-full">
-    <path
-      d="M78 15 L38 46 L58 44 L24 78 L34 55 L18 58 Z"
-      stroke={stroke}
-      strokeWidth={sw}
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-function AnimatedNumber({ value }: { value: number }) {
-  const spring = useSpring(0, { bounce: 0, duration: 1200 })
+function AnimatedNumber({ value, duration }: { value: number, duration?: number }) {
+  const spring = useSpring(0, { bounce: 0, duration: duration || 1200 })
   const rounded = useTransform(spring, (latest) => Math.floor(latest).toLocaleString())
 
   useEffect(() => {
@@ -38,7 +22,7 @@ export const Tracking = ({ title, unit, value, idx, onClick }: { onClick?: () =>
 
   return (
     <div className={"duration-120 ease-out transition-colors flex flex-col gap-1 bg-[#0f1729] px-3 pb-3.75 pt-3.5 " + (typeof onClick === 'function' ? "cursor-pointer hover:bg-[color-mix(in_srgb,var(--bg),#ffffff_2%)]" : "")} onClick={onClick}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.2, duration: 0.3, ease: [0.0, 0.01, 0.01, 0.95] }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.2, duration: 0.3, ease }}>
         <div className="text-[11px] font-bold uppercase tracking-wider text-[#69769a]">{title}</div>
         <div className={"w-fit font-display text-[22px] font-bold text-transparent " + (idx === 0 ? "bg-linear-to-r from-(--accent) via-(--accent-secondary) to-(--accent-secondary) bg-clip-text" : "text-white")}>
           {/* Animate if numeric, otherwise fallback to standard string rendering */}
@@ -57,31 +41,86 @@ export const Tracking = ({ title, unit, value, idx, onClick }: { onClick?: () =>
 
 const Track = ({ pct }: { pct: number }) => (
   <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#141f38]">
-    <div
+    <motion.div
       className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-(--accent) to-(--accent-secondary) shadow-[0_0_10px_0_rgba(47,224,255,0.5)]"
-      style={{ width: `${pct}%` }}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        className="absolute -right-px top-1/2 h-3.5 w-3.5 -translate-y-1/2 drop-shadow-[0_0_3px_#8af1ff]"
-      >
-        <path d="M13 2L5 14h5l-1 8 9-12h-5l1-8z" fill="#8af1ff" />
-      </svg>
-    </div>
+      animate={{ width: `${pct}%` }}
+      initial={{ width: "0%" }}
+      transition={{ duration: 0.5, ease }}
+    />
   </div>
 );
 
+const Overlay = ({ children, onClose, title }: { children: React.ReactNode, onClose: () => void, title: string }) => <motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.1, ease }}
+  onClick={onClose}
+  className="absolute top-0 left-0 inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.5)]"
+>
+  <div className="w-full h-full flex flex-col items-center justify-center">
+    <div onClick={(e) => e.stopPropagation()} className="transition-all duration-150 ease-out w-7/8 bg-(--bg) border-(--border) border rounded-xl p-3 flex flex-col items-center justify-center gap-3">
+      <div className="flex items-center gap-2 justify-between w-full">
+        <span className="font-bold text-[17px] tracking-[-0.02em]">{title}</span>
+        <div onClick={onClose} className="cursor-pointer rounded-full p-1 hover:bg-[color-mix(in_srgb,var(--bg),#ffffff_5%)]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </div>
+      </div>
+      {children}
+    </div>
+  </div>
+</motion.div>
+
+const PointStat = ({ title, value, idx }: { title: string, value: number, idx: number }) => (
+  <div className="p-1.5 flex-col flex items-center justify-center border border-(--border) rounded-lg">
+    <span className="font-bold">{title}</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + idx * 0.2, duration: 0.3, ease: [0,0,0,1] }}
+    >
+      <AnimatedNumber value={value} duration={1000 + idx * 200} />
+    </motion.div>
+  </div>
+)
+
+const PointOverlay = () => (<div className="w-full">
+  <div className="text-md leading-[1.2em]">
+    Your full statistics related to points can be seen here
+  </div>
+
+  <div className="mt-5 grid grid-cols-2 gap-1 border-[#1e2a45] tracking-[-0.03em] leading-[1.2em]">
+    <PointStat title="Today" value={2819} idx={0} />
+
+    <PointStat title="Monthly" value={28193} idx={1} />
+
+    <PointStat title="Yearly" value={281935} idx={2} />
+
+    <PointStat title="Lifetime" value={2812923} idx={3} />
+  </div>
+
+  <PointStat title="Automated" value={583291} idx={4} />
+</div>)
+
 const App = () => {
+  const [overlay, setOverlay] = useState<React.ReactNode | null>(null)
+  const [overlayTitle, setOverlayTitle] = useState("")
+
   return (
-    <div className="font-sans text-white">
-      <div className="w-80 overflow-hidden border border-[#1e2a45] bg-[radial-gradient(120%_160%_at_15%_-10%,#16233f_0%,#070b15_55%)] shadow-[0_30px_60px_-25px_rgba(0,0,0,0.7)]">
+    <div className="select-none font-sans text-white">
+      <div className="relative w-80 overflow-hidden border border-[#1e2a45] bg-[radial-gradient(120%_160%_at_15%_-10%,#16233f_0%,#070b15_55%)] shadow-[0_30px_60px_-25px_rgba(0,0,0,0.7)]">
+        <AnimatePresence>
+          {overlay && <Overlay title={overlayTitle} onClose={() => setOverlay(null)}>{overlay}</Overlay>}
+        </AnimatePresence>
 
         <Header />
 
         {/* Overview: Streak / Points / Stamps */}
         <div className="grid grid-cols-2 gap-px border-b border-[#1e2a45] bg-[#1e2a45]">
-          <Tracking idx={0} title="Points" unit="pts" value={2480} onClick={() => {}} />
+          <Tracking idx={0} title="Points" unit="pts" value={2480} onClick={() => {
+            setOverlayTitle("Points Breakdown")
+            setOverlay(<PointOverlay />)
+          }} />
           <Tracking idx={1} title="Streak" unit="d" value={12} />
         </div>
 
@@ -108,7 +147,6 @@ const App = () => {
               <div className="flex gap-1">
                 {[1].map((d) => (
                   <div key={d} className="flex h-2 flex-1 items-center justify-center rounded-md bg-linear-to-b from-(--accent) to-(--accent-secondary) p-1">
-                    {check}
                   </div>
                 ))}
 
@@ -148,7 +186,7 @@ const App = () => {
               <div>
                 <div className="mb-0.5 text-[12.5px] font-semibold">Claimed points</div>
                 <div className="font-mono tracking-[-0.15px] text-[11.5px] text-[#758ac4]">
-                  <b className="font-semibold text-(--text-neon)">60 pts</b>
+                  <b className="font-semibold text-(--text-neon)"><AnimatedNumber value={62} duration={2000} /> pts</b>
                 </div>
               </div>
             </div>
