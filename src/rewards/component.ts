@@ -180,6 +180,9 @@ export const ParseActionId = async (
 }
 
 export const RefreshSession = async () => {
+    if (Date.now() <= (await Storage.get(StorageKeys.SessionValidateUntil) as number ?? 0))
+        return
+
     log.initlialize("Initializing extension session...")
 
     const url = "https://rewards.bing.com/dashboard"
@@ -211,6 +214,8 @@ export const RefreshSession = async () => {
 
 
     try {await chrome.tabs.remove(rewardTab.id).catch(() => {})} catch {}
+
+    await Storage.set(StorageKeys.SessionValidateUntil, Date.now() + 1000 * 60 * 60 * 2)
 }
 
 export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"

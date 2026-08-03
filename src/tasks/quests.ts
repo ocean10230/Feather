@@ -1,8 +1,7 @@
-import { TaskResponse } from "@/task-response"
-import { FetchPage, parseData, RouterTree } from "@/rewards/component"
-import { ScriptList, StorageKeys } from "@/rewards/utility"
 import { log } from "@/expand"
-import { Storage } from "@/rewards/utility"
+import { TaskResponse } from "@/task"
+import { FetchPage, parseData, RouterTree } from "@/rewards/component"
+import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
 
 export default async (): Promise<TaskResponse> => {
     const page = await FetchPage()

@@ -34,9 +34,9 @@ export const Storage = {
 export const StorageKeys = {
     Today: "Today_Date",
     SearchCompletion: "Today_SearchCompleted",
-    MobileSearchCompletion: "Today_MobileSearchCompleted",
     ActivitiesCompletion: "Today_ActivitiesCompletion",
     DailySetCompletion: "Today_DailySetCompletion",
+    VisualSearchCompletion: "Today_VisualSearchCompletion",
 
     MobileSearchRulesetId: "MobileSearchRulesetId",
     ClaimPointsRulesetId: "ClaimPointsRulesetId",
@@ -52,7 +52,9 @@ export const StorageKeys = {
     ClaimPointsNextActionId: "ClaimPointsNextActionId",
 
     QuestsCompletion: "QuestsCompletion",
-    ActionCompletionDelay: "QuestsActionCompletionDelayedTo"
+    ActionCompletionDelay: "QuestsActionCompletionDelayedTo",
+
+    SessionValidateUntil: "SessionValidateUntil",
 }
 
 export const GetSearches = () => {
@@ -192,7 +194,8 @@ export const Alarms = {
   PCSearch: "pc_search",
   DailySet: "daily_set",
   ClaimPoints: "claim_points",
-  Quests: "quests"
+  Quests: "quests",
+  VisualSearch: "visual_search"
 }
 
 export const Message = "[ \${extension_name} \${extension_version} ] – [ Note ]\nThis extension is built purely with dedication and does not collect any data for analysis/purposes.\nIf you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!"

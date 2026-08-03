@@ -1,6 +1,6 @@
 import { has_tag, log, randomHex, sleep } from "@/expand";
 import { GetSearches, Storage, StorageKeys } from "@/rewards/utility"
-import { TaskResponse } from "@/task-response"
+import { TaskResponse } from "@/task"
 
 let cached: string[] = []
 
@@ -130,6 +130,12 @@ export default async (): Promise<TaskResponse> => {
 
     let searchesDone = CurrentState.RewardsSessionData.DailySearchPointsEarned ?? 0
     const maxSearches = 90
+
+    if (searchesDone >= maxSearches) {
+      log.pc_search("Searches already completed for today. Marking as complete.")
+      await Storage.set(StorageKeys.SearchCompletion, true)
+      return TaskResponse.Confirm
+    }
 
     log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
 

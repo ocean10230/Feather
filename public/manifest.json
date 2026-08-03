@@ -3,10 +3,10 @@
   "name": "Feather",
   "version": "2.3.0",
   "description": "Feather is a powerful Microsoft Rewards macro that automates your daily tasks silently in the background every day.",
-  "author": "randomproject",
+  "author": "RandomProject",
   "browser_specific_settings": {
     "gecko": {
-      "id": "feather-rewards@randomproject",
+      "id": "feather-rewards@ocean10230.is-a.dev",
       "strict_min_version": "109.0"
     }
   },
@@ -17,7 +17,7 @@
     "128": "icon.png"
   },
   "background": {
-    "scripts": ["scripts/background.js"]
+    "service_worker": "scripts/background.js"
   },
   "content_scripts": [
     {

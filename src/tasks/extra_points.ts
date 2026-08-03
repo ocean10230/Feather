@@ -1,7 +1,7 @@
 import { has_tag, log } from "@/expand"
 import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
 import { ParseActionId, parseData, RouterTree } from "@/rewards/component"
-import { TaskResponse } from "@/task-response"
+import { TaskResponse } from "@/task"
 
 export default async (): Promise<TaskResponse> => {
     if (has_tag("ignore_points")) return TaskResponse.Ignored
