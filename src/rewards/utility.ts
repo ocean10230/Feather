@@ -55,6 +55,7 @@ export const StorageKeys = {
     ActionCompletionDelay: "QuestsActionCompletionDelayedTo",
 
     SessionValidateUntil: "SessionValidateUntil",
+    RunAfter: "RunAgainAfter"
 }
 
 export const GetSearches = () => {
@@ -198,7 +199,7 @@ export const Alarms = {
   VisualSearch: "visual_search"
 }
 
-export const Message = "[ \${extension_name} \${extension_version} ] – [ Note ]\nThis extension is built purely with dedication and does not collect any data for analysis/purposes.\nIf you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!"
+export const Message = "[ \${extension_name} \${extension_version} ] – [ Note ]\nThis extension is built purely with dedication and does not collect any data or information for analysis/purposes\nIf you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!"
 
 export const ScriptList = (html: string): NextFlightData => {
   const scriptList: string[] = [];

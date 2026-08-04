@@ -219,3 +219,15 @@ export const RefreshSession = async () => {
 }
 
 export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"
+
+import { randomHex } from "@/expand.ts"
+
+let cached_IID = ""
+
+export const ParseSearchComponent = (data: string) => {
+    const IG = data.match(/_IG="([^"]+)"/i)?.[1] ?? randomHex(32)
+    const IID = data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${Math.floor(Math.random() * 10000)}`
+    cached_IID = IID
+
+    return { IG, IID }
+}
