@@ -24,6 +24,7 @@ declare type ReportStatus = {
     DailySearchPointsLimit: number;
     Balance: number;
     RewardsBalance: number;
+    GiveBalance: number;
     [key: string]: any;
   };
   [key: string]: any;

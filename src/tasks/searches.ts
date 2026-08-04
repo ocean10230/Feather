@@ -84,7 +84,7 @@ const reportSearch = async (query: string) => {
   })
 }
 
-const ParseReport = (response: string): ReportStatus => {
+export const ParseReport = (response: string): ReportStatus => {
   try { return JSON.parse(response.split("ReportActivity(")[1].split(")")[0]) }
   catch (e) {
     log.pc_search("Failed to parse report from server. Error:", e)

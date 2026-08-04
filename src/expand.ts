@@ -11,6 +11,7 @@ export const log = {
   tab: (...args: any[]) => console.log("[tabs]",...args),
   task: (...args: any[]) => console.log("[task_handler]",...args),
   quests: (...args: any[]) => console.log("[quests]",...args),
+  visual_search: (...args: any[]) => console.log("[visual_search]",...args)
 }
 
 const description = chrome.runtime.getManifest().description ?? ""
