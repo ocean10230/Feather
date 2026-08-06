@@ -1,6 +1,6 @@
 import { Storage, StorageKeys, Alarms, date, Message, CleanUp, InitializeSpoofing } from "@/rewards/utility.ts"
 import { Listen, Register } from "@/task.ts"
-import { RefreshSession} from "@/rewards/component.ts"
+import { RefreshSession } from "@/rewards/component.ts"
 import { log, sleep } from "@/expand.ts"
 
 import pc_search from "@/tasks/searches.ts"
@@ -10,11 +10,13 @@ import daily_set from "./tasks/daily_set"
 import quests from "./tasks/quests"
 import visual_search from "./tasks/visual_search"
 
-let initialized = false
+const RUN_EVERY_MIN = 30
+const COOLDOWN_MS = RUN_EVERY_MIN * 60 * 1000
 
 const init = async () => {
-  if (initialized) return
-  initialized = true
+  const runAfter = (await Storage.get(StorageKeys.RunAfter) as number) ?? 0
+  if (Date.now() < runAfter) return
+  await Storage.set(StorageKeys.RunAfter, Date.now() + COOLDOWN_MS)
 
   await CleanUp()
   await RefreshSession()

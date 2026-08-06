@@ -1,5 +1,4 @@
 import { has_tag, log, randomHex, sleep } from "@/expand";
-import { FetchPage, parseData } from "@/rewards/component";
 import { GetSearches, Storage, StorageKeys } from "@/rewards/utility"
 import { TaskResponse } from "@/task"
 
@@ -68,10 +67,15 @@ const applyVariantDistribution = (queries: string[]): string[] => {
   })
 }
 
-const reportSearch = async (query: string) => {
+const reportSearch = async (query: string, fetch_prom: Promise<Response>) => {
   log.activities(`Reporting search "${query}" to Microsoft's API for points`)
-  const IG = randomHex(32)
-  const IID = `SERP.${Math.floor(Math.random() * 10000)}`
+
+  const text = await (await fetch_prom).text()
+  const components = ParseSearchComponent(text)
+
+  const IG =  components.IG
+  const IID = components.IID
+
   const rdr = Math.floor(Math.random() * 10) + 1
   const rdrig = randomHex(32)
 
@@ -94,10 +98,7 @@ export const ParseReport = (response: string): ReportStatus => {
 }
 
 const GetCurrentState = async (query: string): Promise<ReportStatus> => {
-  const [_, reportResponse] = await Promise.all([
-    fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`), 
-    reportSearch(query)
-  ])
+  const reportResponse = await reportSearch(query, fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`))
 
   return ParseReport(await reportResponse.text())
 }
@@ -257,11 +258,7 @@ const PCSearch = async (): Promise<TaskResponse> => {
       if (searchesDone >= maxSearches) break
 
       try {
-        const [_, report] = await Promise.all([
-          fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`),
-          reportSearch(query)
-        ]);
-
+        const report = await reportSearch(query, fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`))
         const parsed = ParseReport(await report.text());
         
         // Safely extract points earned or fallback to default increment (+3)

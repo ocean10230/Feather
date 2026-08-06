@@ -30,7 +30,6 @@
     }
   ],
   "permissions": [
-    "scripting",
     "storage",
     "alarms",
     "declarativeNetRequest"
