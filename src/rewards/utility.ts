@@ -240,7 +240,7 @@ export const CleanUp = async () => {
     log.initlialize("Cleaned up old rules:", ruleIds)
 }
 
-const MaskHeader = (header: string, value: string): chrome.declarativeNetRequest.ModifyHeaderInfo => ({
+export const MaskHeader = (header: string, value: string): chrome.declarativeNetRequest.ModifyHeaderInfo => ({
     header, value, operation: "set"
 })
 

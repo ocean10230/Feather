@@ -1,4 +1,5 @@
 import { has_tag, log, randomHex, sleep } from "@/expand";
+import { FetchPage, parseData } from "@/rewards/component";
 import { GetSearches, Storage, StorageKeys } from "@/rewards/utility"
 import { TaskResponse } from "@/task"
 
@@ -100,8 +101,121 @@ const GetCurrentState = async (query: string): Promise<ReportStatus> => {
 
   return ParseReport(await reportResponse.text())
 }
+/*
 
-export default async (): Promise<TaskResponse> => {
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [100],
+    addRules: [
+      {
+        id: 100,
+        action: {
+          type: "modifyHeaders",
+          requestHeaders: SpoofUserAgent
+        },
+        condition: {
+          regexFilter: "^https://(www\\.)?bing\\.com/",
+          resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"]
+        }
+      }
+    ]
+  })
+
+  await MobileSearch()
+
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [100],
+  })
+
+const SpoofUserAgent = [
+  MaskHeader("sec-ch-ua", '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"'),
+  MaskHeader("sec-ch-ua-mobile", "?1"),
+  MaskHeader("sec-ch-ua-platform", '"Android"'),
+  MaskHeader("sec-ch-ua-platform-version", '"15.0.0"'),
+  MaskHeader("sec-fetch-dest", "empty"),
+  MaskHeader("sec-fetch-mode", "cors"),
+  MaskHeader("sec-fetch-site", "cross-site"),
+  MaskHeader(
+    "user-agent",
+    "Mozilla/5.0 (Linux; Android 15; Pixel 8 Pro Build/AP2A.240805.005) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36"
+  ),
+]
+
+
+
+const MobileSearch = async (): Promise<TaskResponse> => {
+  if (has_tag("ignore_mobile_search")) {
+    await Storage.set(StorageKeys.SearchCompletion, true)
+    return TaskResponse.Confirm
+  }
+
+  const completed = await Storage.get(StorageKeys.SearchCompletion)
+  if (completed === true) return TaskResponse.Confirm
+
+  try {
+    if (cached.length < 1) cached = GetSearches()
+    
+    // Pick 150 random queries and apply human variants
+    const raw_queries = cached.sort(() => 0.5 - Math.random()).slice(0, 150)
+    const queries = applyVariantDistribution(raw_queries)
+    
+    // Safely pick a random index without out-of-bounds error
+    const randomIndex = Math.floor(Math.random() * queries.length)
+    const CurrentState = await GetCurrentState(queries[randomIndex])
+
+    if (CurrentState.Failed || !CurrentState.RewardsSessionData) {
+      log.pc_search("Could not initialize initial rewards state.")
+      return TaskResponse.UnknownError
+    }
+
+    log.pc_search("Queries list length:", queries.length, "items")
+
+    let searchesDone = CurrentState.RewardsSessionData.DailySearchPointsEarned ?? 0
+    const maxSearches = 90
+
+    if (searchesDone >= maxSearches) {
+      log.pc_search("Searches already completed for today. Marking as complete.")
+      await Storage.set(StorageKeys.SearchCompletion, true)
+      return TaskResponse.Confirm
+    }
+
+    log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
+
+    for (const query of queries) {
+      if (searchesDone >= maxSearches) break
+
+      try {
+        const [_, report] = await Promise.all([
+          fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`),
+          reportSearch(query)
+        ]);
+
+        const parsed = ParseReport(await report.text());
+        
+        // Safely extract points earned or fallback to default increment (+3)
+        if (!parsed.Failed && parsed.RewardsSessionData)
+          searchesDone = parsed.RewardsSessionData.DailySearchPointsEarned ?? (searchesDone + (parsed.RewardsIncrement || 3));
+        else
+          searchesDone += 3; // Safe default increment on parse failure
+      }
+      catch (e) { 
+        log.pc_search("Failed to search:", e) 
+      }
+
+      await sleep(7000 + Math.random() * 3500)
+    }
+  }
+  catch (e) {
+    log.pc_search("Unknown error:", e)
+    return TaskResponse.UnknownError
+  }
+
+  log.pc_search("Done. Awaiting confirmation")
+  return TaskResponse.Done
+}
+
+*/
+
+const PCSearch = async (): Promise<TaskResponse> => {
   if (has_tag("ignore_pc_search")) {
     await Storage.set(StorageKeys.SearchCompletion, true)
     return TaskResponse.Confirm
@@ -170,4 +284,17 @@ export default async (): Promise<TaskResponse> => {
 
   log.pc_search("Done. Awaiting confirmation")
   return TaskResponse.Done
+}
+
+export default async (): Promise<TaskResponse> => {
+  const pageDat = await FetchPage()
+  const counter: PointsCounter = (await parseData(pageDat, `\"type\":\"pointbreakdown\"`)).model.pointsCounters
+  console.log(counter, counter.pc, counter.mobile)
+
+  if (counter.pc.progress >= counter.pc.max && counter.mobile.progress >= counter.mobile.max)
+    return TaskResponse.Confirm
+
+  const pc_res = await PCSearch()
+
+  return pc_res
 }

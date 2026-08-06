@@ -15,7 +15,7 @@ export default async (): Promise<TaskResponse> => {
     log.quests("In Demo - Only parsing data from the first list to avoid error to get flagged as false ban")
 
     const all_quests = parsed_quests.children[3].children
-    const first = all_quests[0][3]
+    const first = all_quests[1][3]
 
     const html = await (await fetch("https://rewards.bing.com/" + first.href)).text()
     const listed_script = ScriptList(html)
@@ -24,20 +24,27 @@ export default async (): Promise<TaskResponse> => {
     const dpl = await Storage.get(StorageKeys.DeploymentId) as string
     const debug = true
 
-    for (const action of quest_actions) {
-        const quest_data = action.children[1][3].children[1][3]
+    log.quests(quest_actions)
 
-        const [href, hash, completed, disabled, locked, offerId, clickable] = [
+    for (const action of quest_actions) {
+        const first_node = action.children?.[1][3]
+        const second_node = first_node.children?.[1][3]
+
+        const quest_data = typeof second_node === 'object' && second_node !== null 
+            ? second_node 
+            : first_node
+        log.quests(first_node, quest_data)
+
+        const [href, hash, completed, disabled, locked, offerId] = [
             quest_data.href,
             quest_data.hash,
             quest_data.isCompleted,
             quest_data.isDisabled,
             quest_data.isLocked,
-            quest_data.offerId,
-            quest_data.children[3].instrument.click
+            quest_data.offerId
         ]
         
-        if (!debug && href && (!completed && !disabled && !locked) && offerId && clickable) {
+        if (!debug && href && (!completed && !disabled && !locked) && offerId) {
             await fetch("https://rewards.bing.com/earn/quest/" + offerId, {
                 "headers": {
                     "accept": "text/x-component",

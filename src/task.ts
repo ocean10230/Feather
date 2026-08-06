@@ -10,6 +10,7 @@ export const TaskResponse = {
   InvalidInformation: 6,
   BrowserError: 7,
   Ignored: 8,
+  PartialFailure: 9
 } as const
 
 export const TaskRegistrationStatus = {

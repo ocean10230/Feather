@@ -29,3 +29,15 @@ declare type ReportStatus = {
   };
   [key: string]: any;
 };
+
+declare type SearchInfo = {
+  max: number
+  progress: number
+}
+
+declare type PointsCounter = {
+  dailyOffer: number
+  mobile: SearchInfo
+  pc: SearchInfo
+  totalPoints: number
+}
