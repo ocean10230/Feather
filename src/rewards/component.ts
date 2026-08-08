@@ -2,8 +2,12 @@ import { pcall, Storage, StorageKeys } from "./utility.ts"
 import { log,  sleep } from "../expand.ts"
 import { ScriptList } from "./utility.ts"
 
+export const Bing = "https://www.bing.com"
+export const Main = "https://rewards.bing.com"
+export const Dashboard = "https://rewards.bing.com/dashboard"
+
 // parse the stupid shit
-export const parseData = async (
+export const RSC = async (
   data?: string,
   keyword?: string | string[],
   multiple = false
@@ -23,7 +27,7 @@ export const parseData = async (
 
     const regex = /(?<=\b\d+[a-z]?:)\[[\s\S]*\]/
 
-    const parse = ({ line, index }: { line: string, index: number }) => {
+    const parse = ({ line }: { line: string, index: number }) => {
       const match = line.match(regex)
       if (!match) return null
 
@@ -34,7 +38,11 @@ export const parseData = async (
         return parsed?.[3] ?? null
       } catch (e) {
         if (e instanceof SyntaxError) {
-          const pos = Number(e.message.match(/position (\d+)/)?.[1] ?? -1)
+            console.warn("Got syntax error:", e, json)
+
+          /*
+
+                    const pos = Number(e.message.match(/position (\d+)/)?.[1] ?? -1)
 
           const context = 120
           const start = Math.max(0, pos - context)
@@ -55,6 +63,7 @@ export const parseData = async (
               data,
             ].join("\n"),
           )
+          */
         } else {
           console.warn("Unknown parse failure:", e)
         }
@@ -76,7 +85,7 @@ export const parseData = async (
 
 const Cached: Record<string, NextFlightData> = {}
 
-export const FetchPage = async (page: string = "https://rewards.bing.com/earn"): Promise<NextFlightData> => {
+export const FetchPage = async (page: string = Main + "/earn"): Promise<NextFlightData> => {
     try {
         if (Cached[page]) return Cached[page]
         else Cached[page] = ScriptList( await (await fetch(page)).text() )
@@ -88,7 +97,7 @@ export const FetchPage = async (page: string = "https://rewards.bing.com/earn"):
     }
 }
 
-const parseWebpackChunks = (source: string) => {
+const ParseScriptChunk = (source: string) => {
     const result: Record<string, string> = {}
     const specialRegex = /(\d+)\s*===\s*e\s*\?\s*"([^"]+)"/g
     let match
@@ -121,7 +130,7 @@ export const InitializeWebpackBundleList = async (doc: string, deployment_id: st
 
     const scriptResponse = await fetch(`https://rewards.bing.com${scriptUrl}`)
     const scriptText = await scriptResponse.text()
-    const chunks = parseWebpackChunks(scriptText)
+    const chunks = ParseScriptChunk(scriptText)
 
     const chunk_list: Record<string,string> = {}
 
@@ -185,49 +194,89 @@ export const RefreshSession = async () => {
 
     log.initlialize("Initializing extension session...")
 
-    const url = "https://rewards.bing.com/dashboard"
-    const rewardTab = await chrome.tabs.create({ url, active: false })
+    const url = Dashboard
+    const rewardTab = await tabs.create({ url, active: false })
     
     if (!rewardTab.id) return
-    log.tab("Opening Microsoft Rewards tab to handle auth redirect...")
+    log.initlialize("Opening Microsoft Rewards tab to handle auth redirect...")
 
     await sleep(1500)
-    const currentTab = await chrome.tabs.get(rewardTab.id).catch(() => null)
+    const currentTab = await tabs.get(rewardTab.id).catch(() => null)
 
     if (currentTab?.url === url) {
-        log.tab("Session already valid!")
-        try { await chrome.tabs.remove(rewardTab.id) } catch {}
+        log.initlialize("Session already valid!")
+        try { await tabs.remove(rewardTab.id) } catch {}
         return
     }
 
     await new Promise<void>((resolve) => {
         const listener = async (tabId: number, changeInfo: any, tab: chrome.tabs.Tab) => {
             if (tabId === rewardTab.id && changeInfo.status === "complete" && tab.url === url) {
-                log.tab("Microsoft Rewards page loaded, session refreshed!")
-                chrome.tabs.onUpdated.removeListener(listener)
+                log.initlialize("Microsoft Rewards page loaded, session refreshed!")
+                tabs.onUpdated.removeListener(listener)
                 resolve()
             }
         }
 
-        try { chrome.tabs.onUpdated.addListener(listener) } catch {}
+        try { tabs.onUpdated.addListener(listener) } catch {}
     })
 
-
-    try {await chrome.tabs.remove(rewardTab.id).catch(() => {})} catch {}
-
-    await Storage.set(StorageKeys.SessionValidateUntil, Date.now() + 1000 * 60 * 60 * 2)
+    try {await tabs.remove(rewardTab.id).catch(() => {})} catch {}
+    await Storage.set(StorageKeys.SessionValidateUntil, Date.now() + 1000 * 60 * 60 * 4)
 }
 
 export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"
 
 import { randomHex } from "@/expand.ts"
-
 let cached_IID = ""
 
 export const ParseSearchComponent = (data: string) => {
     const IG = data.match(/_IG="([^"]+)"/i)?.[1] ?? randomHex(32)
-    const IID = data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${Math.floor(Math.random() * 10000)}`
+    const IID = cached_IID || data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${Math.floor(Math.random() * 10000)}`
     cached_IID = IID
 
     return { IG, IID }
+}
+
+export const ExecuteQuest = async (quest: QuestData, dpl?: string): Promise<boolean> => {
+    const url = `https://rewards.bing.com/earn/${quest.offerId.includes("punchcard") ? `quest/${quest.offerId}` : ""}`
+
+    if (quest.offerId.includes("punchcard") && !dpl)
+        throw new Error("")
+
+    const headers: HeadersInit = {
+        "accept": "text/x-component",
+        "accept-language": "en-US,enq=0.9",
+        "content-type": "text/plaincharset=UTF-8",
+        "next-action": "70babbc81d2724f60d29a95c03b3d739cba77cea92",
+        "next-router-state-tree": RouterTree,
+    }
+
+    if (dpl) headers["x-deployment-id"] = dpl
+
+    const res = await fetch(url, {
+        headers,
+        referrer: url,
+        body: JSON.stringify([
+            quest.hash, 11, {
+                isPromotional: "$undefined", offerid: quest,
+                timezoneOffset: String(new Date().getTimezoneOffset())
+            }
+        ]),
+        method: "POST",
+        mode: "cors",
+        credentials: "include"
+    })
+
+    const text = await res.text()
+    return text.includes("1:true")
+}
+
+export const ParseReport = (response: string): ReportStatus => {
+  try {
+    return JSON.parse(response.split("ReportActivity(")[1].split(")")[0])
+  } catch (e) {
+    log.searches("Failed to parse report from server. Error:", e)
+    return { Failed: true } as ReportStatus
+  }
 }

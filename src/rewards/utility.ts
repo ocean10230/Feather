@@ -1,33 +1,11 @@
-import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "./search_generation"
-
-const isExtension = !!chrome.storage
+import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "@/rewards/search_generation"
 
 export const Storage = {
     async get(key: string): Promise<StorageData> {
-        if (isExtension)
-            return (await chrome.storage.local.get(key))[key] as StorageData
-        else {
-            const data = localStorage.getItem(key) as StorageData
-            
-            try {
-                return JSON.parse(data as string) as StorageData
-            }
-            catch {
-                return data
-            }
-        }
+        return (await chrome.storage.local.get(key))[key] as StorageData
     },
     async set(key: string, value: StorageData): Promise<void> {
-        if (isExtension)
-            await chrome.storage.local.set({ [key]: value })
-        else {
-            try {
-                localStorage.setItem(key, JSON.stringify(value))
-            }
-            catch {
-                localStorage.setItem(key, !!value ? String(value) : value as string)
-            }
-        }
+        await chrome.storage.local.set({ [key]: value })
     }
 }
 
@@ -232,13 +210,10 @@ export const ScriptList = (html: string): NextFlightData => {
 
 export const date=(d=new Date): QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
 
-import { log } from "@/expand"
-
 export const CleanUp = async () => {
     const rules = await chrome.declarativeNetRequest.getDynamicRules()
     const ruleIds = rules.map(rule => rule.id)
     await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ruleIds })
-    log.initlialize("Cleaned up old rules:", ruleIds)
 }
 
 export const MaskHeader = (header: string, value: string): chrome.declarativeNetRequest.ModifyHeaderInfo => ({
@@ -246,8 +221,6 @@ export const MaskHeader = (header: string, value: string): chrome.declarativeNet
 })
 
 export const InitializeSpoofing = async () => {
-    log.initlialize("Creating new rules to spoof origin")
-
     const rules: ModifyHeaderDNR[] = [
         {
             action: {
@@ -280,7 +253,7 @@ export const InitializeSpoofing = async () => {
         ...rule,
         id: index + 1,   // DNR rule IDs must be positive integers
         priority: 1
-    }));
+    }))
 
     await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: filtered_rules

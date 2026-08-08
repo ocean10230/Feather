@@ -48,7 +48,6 @@ export const phones = [
   ...iphone.map(phone => phone + " Pro"),
   ...iphone.map(phone => phone + " Pro Max"),
   
-  // Samsung
   ...samsung_s_phone,
   ...samsung_s_phone.map(phone => phone + " Ultra"),
   ...samsung_s_phone.map(phone => phone + " FE"),
@@ -58,23 +57,18 @@ export const phones = [
   
   "OnePlus 9", "OnePlus 10 Pro",
   "OnePlus 11", "OnePlus 12",
-];
+]
 
-// 1. Popular Affordable & Gaming Component Terms
 export const components_base = [
-  // GPUs (Nvidia & AMD Budget/Mid-range Sweet Spots)
   "rtx 3060", "rtx 4060", "rtx 4060 ti", "rtx 3050", "gtx 1650", "gtx 1060",
   "rx 6600", "rx 6700 xt", "rx 7600", "rx 580", "arc a750",
-  // CPUs (Budget Value Kings)
   "ryzen 5 3600", "ryzen 5 5600", "ryzen 5 5600x", "ryzen 7 5700x3d", "ryzen 7 7800x3d",
   "i5 12400f", "i5 13400f", "i3 12100f", "i5 10400f",
-  // Core Specs & Accessories
   "ddr4 ram 16gb", "ddr5 ram 32gb", "1tb nvme ssd", "2tb nvme ssd",
   "budget B550 motherboard", "b650 motherboard", "650w psu gold",
   "budget cpu cooler", "thermalright peerless assassin 120", "budget pc case"
 ]
 
-// 2. PC Building & Performance Base Intent Templates
 export const hardwareBases: ((h: string) => string)[] = [
   h => h,
   h => `${h} price`,

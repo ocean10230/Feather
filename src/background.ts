@@ -1,59 +1,78 @@
-import { Storage, StorageKeys, Alarms, date, Message, CleanUp, InitializeSpoofing } from "@/rewards/utility.ts"
-import { Listen, Register } from "@/task.ts"
-import { RefreshSession } from "@/rewards/component.ts"
-import { log, sleep } from "@/expand.ts"
+import { Storage, StorageKeys, Alarms, Message, CleanUp, InitializeSpoofing } from "@/rewards/utility"
+import { Listen, Register } from "@/task"
+import { RefreshSession } from "@/rewards/component"
+import { log } from "@/expand"
 
-import pc_search from "@/tasks/searches.ts"
-import extra_points from "@/tasks/extra_points.ts"
-import activities from "@/tasks/activities.ts"
-import daily_set from "./tasks/daily_set"
-import quests from "./tasks/quests"
-import visual_search from "./tasks/visual_search"
+import pc_search from "@/tasks/searches"
+import extra_points from "@/tasks/extra_points"
+import activities from "@/tasks/activities"
+import daily_set from "@/tasks/daily_set"
+import quests from "@/tasks/quests"
+import visual_search from "@/tasks/visual_search"
 
 const RUN_EVERY_MIN = 30
 const COOLDOWN_MS = RUN_EVERY_MIN * 60 * 1000
+const DEBUG = true
+
+globalThis.api = chrome
+globalThis.runtime = chrome.runtime
+globalThis.tabs = chrome.tabs
+
+let isInitializing = false
 
 const init = async () => {
-  const runAfter = (await Storage.get(StorageKeys.RunAfter) as number) ?? 0
-  if (Date.now() < runAfter) return
-  await Storage.set(StorageKeys.RunAfter, Date.now() + COOLDOWN_MS)
+  if (isInitializing) return
+  isInitializing = true
 
-  await CleanUp()
-  await RefreshSession()
-  await InitializeSpoofing()
+  try {
+    const [delayedStart, storedDay] = await Promise.all([
+      Storage.get(StorageKeys.RunAfter) as Promise<number | undefined>,
+      Storage.get(StorageKeys.Today) as Promise<number | undefined>
+    ])
 
-  await sleep(200)
+    const now = Date.now()
+    if (now < (delayedStart ?? 0) && !DEBUG) return
 
-  await Register({ name: Alarms.Activties, interval: 2, handler: activities })
-  await Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search })
-  await Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points })
-  await Register({ name: Alarms.DailySet, interval: 25, handler: daily_set })
-  await Register({ name: Alarms.Quests, interval: 25, handler: quests })
-  await Register({ name: Alarms.VisualSearch, interval: 60, handler: visual_search })
+    const currentDay = new Date().getDay()
 
-  const storedToday = await Storage.get(StorageKeys.Today) as QuestDateFormat
-  const currentDate = date()
+    const setupTasks: Promise<any>[] = [
+      Storage.set(StorageKeys.RunAfter, now + COOLDOWN_MS),
+      CleanUp(),
+      InitializeSpoofing(),
+      RefreshSession()
+    ]
 
-  if (storedToday !== currentDate) {
-    log.initlialize("Detected date change, resetting progress")
+    if (storedDay !== currentDay) {
+      setupTasks.push(
+        Storage.set(StorageKeys.Today, currentDay),
+        Storage.set(StorageKeys.ActivitiesCompletion, false),
+        Storage.set(StorageKeys.DailySetCompletion, false),
+        Storage.set(StorageKeys.SearchCompletion, false),
+        Storage.set(StorageKeys.VisualSearchCompletion, false)
+      )
+    }
+
+    await Promise.all(setupTasks)
 
     await Promise.all([
-      Storage.set(StorageKeys.Today, date()),
-      Storage.set(StorageKeys.ActivitiesCompletion, false),
-      Storage.set(StorageKeys.DailySetCompletion, false),
-      Storage.set(StorageKeys.SearchCompletion, false),
+      Register({ name: Alarms.Activties, interval: 2, handler: activities }),
+      Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search }),
+      Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points }),
+      Register({ name: Alarms.DailySet, interval: 25, handler: daily_set }),
+      Register({ name: Alarms.Quests, interval: 25, handler: quests }),
+      Register({ name: Alarms.VisualSearch, interval: 60, handler: visual_search })
     ])
-  }
 
-  log.initlialize("Creating alarms")
-  Listen()
+    log.initlialize("Creating alarms")
+    Listen()
+  } finally {
+    isInitializing = false
+  }
 }
 
-chrome.runtime.onStartup.addListener(() => { void init() })
-chrome.runtime.onInstalled.addListener(async () => {
-  const manifest = chrome.runtime.getManifest();
-  console.error(Message.replace('\${extension_version}', manifest.version).replace('\${extension_name}', manifest.name))
+runtime.onStartup.addListener(() => { void init() })
+runtime.onInstalled.addListener(() => {
+  const manifest = runtime.getManifest()
+  console.error(Message.replace('${extension_version}', manifest.version).replace('${extension_name}', manifest.name))
   void init()
 })
-
-void init()

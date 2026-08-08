@@ -1,14 +1,13 @@
 import { defineConfig } from 'vite'
-import path from 'path'
+import { resolve } from 'path'
 
 export default defineConfig({
   build: {
     minify: true,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
-        background: path.resolve(__dirname, 'src/background.ts'),
-        
+        main: resolve(__dirname, 'index.html'),
+        background: resolve(__dirname, 'src/background.ts'),
       },
       output: {
         entryFileNames: (chunk) => 'scripts/[name].js'
@@ -18,7 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Points to the current root (src)
-      '@': path.resolve(__dirname, 'src'), 
+      '@': resolve(__dirname, 'src'), 
     },
-  },
+  }
 })

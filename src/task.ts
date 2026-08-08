@@ -9,7 +9,6 @@ export const TaskResponse = {
   Disabled: 5,
   InvalidInformation: 6,
   BrowserError: 7,
-  Ignored: 8,
   PartialFailure: 9
 } as const
 
@@ -43,6 +42,7 @@ export const Register = async (task: TaskRegistration) => {
     return TaskRegistrationStatus.Success
 }
 
+/*
 export const Remove = async (task: string): Promise<TaskRemovalStatus> => {
     if (!RegisteredTasks.has(task)) return TaskRemovalStatus.NotFound
 
@@ -57,6 +57,7 @@ export const Remove = async (task: string): Promise<TaskRemovalStatus> => {
 
     return TaskRemovalStatus.Success
 }
+*/
 
 export const Listen = () => {
     for (const Task of RegisteredTasks.values()) {
@@ -95,15 +96,10 @@ export const Listen = () => {
                     case TaskResponse.Disabled:
                         if (!Task.disable_logs)
                             log.task(`Task "${Task.name}" is disabled. Logs for this task will be temporarily be ignored until turned back on`)
-                        else
-                            RegisteredTasks.set(Task.name, { ...Task, disable_logs: true })
-
-                        break
-                    case TaskResponse.Ignored:
-                        if (!Task.disable_logs)
-                            log.task(`Task "${Task.name}" is ignored until one of the developer tag get removed`)
-                        else
-                            RegisteredTasks.set(Task.name, { ...Task, disable_logs: true })
+                        else {
+                            Task.disable_logs = true
+                            RegisteredTasks.set(Task.name, Task)
+                        }
                         break
                     case TaskResponse.ParseFailure:
                         log.task(`Task "${Task.name}" was unable to parse some data. Please check console for more`)

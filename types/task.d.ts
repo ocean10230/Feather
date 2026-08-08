@@ -3,15 +3,12 @@ declare type TaskRegistration = {
   name: string,
   interval: number,
   done?: boolean,
-  ignorance_tags?: string[],
-  disabled?: boolean,
   disable_logs?: boolean
 }
 
-enum TaskRegistrationStatus {
-  Unknown, Success, Failed, Taken, AlreadyDone
-}
-
-enum TaskRemovalStatus {
-  Unknown, Success, Failed, NotFound
+enum TaskRegistrationStatus { Unknown, Success, Failed, Taken, AlreadyDone }
+enum TaskRemovalStatus { Unknown, Success, Failed, NotFound }
+// 1. Augment the global scope
+declare global {
+  var c = chrome
 }

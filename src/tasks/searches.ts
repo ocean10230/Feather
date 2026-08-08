@@ -1,49 +1,48 @@
-import { has_tag, log, randomHex, sleep } from "@/expand";
+import { log, randomHex, sleep } from "@/expand"
 import { GetSearches, Storage, StorageKeys } from "@/rewards/utility"
+import { FetchPage, RSC, ParseSearchComponent, ParseReport } from "@/rewards/component"
 import { TaskResponse } from "@/task"
 
 let cached: string[] = []
 
-const addNaturalHumanTypo = (query: string, chance = 0.10): string => {
-  if (Math.random() > chance || query.length < 6) return query;
+// --- HUMAN TYPO & VARIANT GENERATION ---
+const GenerateTypo = (query: string, chance = 0.10): string => {
+  if (Math.random() > chance || query.length < 6) return query
 
-  const words = query.split(" ");
-  if (words.length < 2) return query;
+  const words = query.split(" ")
+  if (words.length < 2) return query
 
-  const mode = Math.random();
+  const mode = Math.random()
 
-  // Mode 1: Missed Space / Fused Words (e.g., "how todownload") - 40% chance
   if (mode < 0.40) {
-    const spaceIdx = Math.floor(Math.random() * (words.length - 1));
-    words[spaceIdx] = words[spaceIdx] + words[spaceIdx + 1];
-    words.splice(spaceIdx + 1, 1);
-    return words.join(" ");
+    const spaceIdx = Math.floor(Math.random() * (words.length - 1))
+    words[spaceIdx] = words[spaceIdx] + words[spaceIdx + 1]
+    words.splice(spaceIdx + 1, 1)
+    return words.join(" ")
   }
 
-  // Mode 2: Delayed Space Hit (e.g., "how tod ownload") - 30% chance
   if (mode < 0.70) {
-    const spaceIdx = Math.floor(Math.random() * (words.length - 1));
-    const targetWord = words[spaceIdx + 1];
-    
+    const spaceIdx = Math.floor(Math.random() * (words.length - 1))
+    const targetWord = words[spaceIdx + 1]
+
     if (targetWord.length > 2) {
-      words[spaceIdx] = words[spaceIdx] + targetWord[0];
-      words[spaceIdx + 1] = targetWord.slice(1);
-      return words.join(" ");
+      words[spaceIdx] = words[spaceIdx] + targetWord[0]
+      words[spaceIdx + 1] = targetWord.slice(1)
+      return words.join(" ")
     }
   }
 
-  // Mode 3: In-Word Letter Swap (e.g., "downlaod") - 30% chance
-  const targetWordIdx = Math.floor(Math.random() * words.length);
-  const wordChars = words[targetWordIdx].split("");
+  const targetWordIdx = Math.floor(Math.random() * words.length)
+  const wordChars = words[targetWordIdx].split("")
 
   if (wordChars.length >= 4) {
     const charIdx = Math.floor(Math.random() * (wordChars.length - 3)) + 1;
-    [wordChars[charIdx], wordChars[charIdx + 1]] = [wordChars[charIdx + 1], wordChars[charIdx]];
-    words[targetWordIdx] = wordChars.join("");
+    [wordChars[charIdx], wordChars[charIdx + 1]] = [wordChars[charIdx + 1], wordChars[charIdx]]
+    words[targetWordIdx] = wordChars.join("")
   }
 
-  return words.join(" ");
-};
+  return words.join(" ")
+}
 
 const toTitleCase = (str: string): string =>
   str.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
@@ -54,244 +53,132 @@ const applyVariantDistribution = (queries: string[]): string[] => {
   return queries.map(query => {
     const roll = Math.random()
 
-    if (roll < 0.20)
-      return toTitleCase(query)
-    else if (roll < 0.25)
-      return toUpperCase(query)
-    else if (roll < 0.35)
-      return addNaturalHumanTypo(toUpperCase(query))
-    else if (roll < 0.40)
-      return addNaturalHumanTypo(query)
-    
+    if (roll < 0.20) return toTitleCase(query)
+    if (roll < 0.25) return toUpperCase(query)
+    if (roll < 0.35) return GenerateTypo(toUpperCase(query))
+    if (roll < 0.40) return GenerateTypo(query)
+
     return query
   })
 }
 
-const reportSearch = async (query: string, fetch_prom: Promise<Response>) => {
-  log.activities(`Reporting search "${query}" to Microsoft's API for points`)
+// --- SEARCH REPORTING ---
+const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
+  log.activities(`Reporting search "${q}" to Microsoft's API for points`)
 
   const text = await (await fetch_prom).text()
   const components = ParseSearchComponent(text)
 
-  const IG =  components.IG
+  const IG = components.IG
   const IID = components.IID
 
   const rdr = Math.floor(Math.random() * 10) + 1
   const rdrig = randomHex(32)
+  const cvid = randomHex(32).toUpperCase()
 
-  const url = "https://www.bing.com/rewardsapp/reportActivity"
-  const params = new URLSearchParams({ IG, IID, q: query, FORM: "HDRSC1", rdr: `${rdr}`, rdrig, ajaxreq: "1" })
-  const body = new URLSearchParams({ url: `https://www.bing.com/search?q=${encodeURIComponent(query)}&FORM=HDRSC1&rdr=${rdr}&rdrig=${rdrig}`, V: "web" })
+  const queryParams = new URLSearchParams({
+    IG, IID,
+    q, form: "QBLH",
+    sp: "-1", ghc: "1", lq: "0",
+    pq: q, sc: "1-9", qs: "n",
+    sk: "", cvid, rdr: `${rdr}`,
+    rdrig, ajaxreq: "1",
+  })
 
-  return await fetch(`${url}?${params}`, {
-    method: "POST", body, credentials: "include",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "*/*" }
+  const fullSearchUrl = `https://www.bing.com/search?${queryParams.toString()}`
+  const endpoint = `https://www.bing.com/rewardsapp/reportActivity?${queryParams.toString()}`
+
+  const body = new URLSearchParams({
+    url: fullSearchUrl, V: "web",
+  })
+
+  return await fetch(endpoint, {
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+    headers: {
+      "accept": "*/*", "ect": "4g", "priority": "u=1, i",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    referrer: fullSearchUrl,
+    body: body.toString(),
   })
 }
 
-export const ParseReport = (response: string): ReportStatus => {
-  try { return JSON.parse(response.split("ReportActivity(")[1].split(")")[0]) }
-  catch (e) {
-    log.pc_search("Failed to parse report from server. Error:", e)
-    return { Failed: true } as ReportStatus
+const IsCompleted = (counter?: SearchInfo) => Boolean(counter && counter.progress >= counter.max)
+
+// --- CORE SEARCH LOOP ---
+const ExecutePhase = async (
+  counter: SearchInfo
+): Promise<boolean> => {
+  if (IsCompleted(counter)) {
+    log.searches(`Already completed for today (${counter.progress}/${counter.max}).`)
+    return true
   }
+
+  if (cached.length < 1) cached = GetSearches()
+  if (!cached || cached.length === 0) {
+    log.searches(`No queries available in cached list.`)
+    return false
+  }
+
+  const raw_queries = cached.sort(() => 0.5 - Math.random()).slice(0, 150)
+  const queries = applyVariantDistribution(raw_queries)
+
+  let searchesDone = counter.progress ?? 0
+  const maxSearches = counter.max ?? 60
+
+  log.searches(`Starting search loop... Initial progress: ${searchesDone}/${maxSearches}`)
+
+  for (const query of queries) {
+    if (searchesDone >= maxSearches) break
+
+    try {
+      const report = await reportSearch(
+        query,
+        fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`)
+      )
+      const parsed = ParseReport(await report.text())
+
+      if (!parsed.Failed && parsed.RewardsSessionData) {
+        searchesDone =
+          parsed.RewardsSessionData.DailySearchPointsEarned ??
+          searchesDone + (parsed.RewardsIncrement || 3)
+      } else {
+        searchesDone += 3
+      }
+    } catch (e) {
+      log.searches(`Failed to search query "${query}":`, e)
+    }
+
+    await sleep(7000 + Math.random() * 3500)
+  }
+
+  log.searches(`Phase finished with status: ${searchesDone}/${maxSearches}`)
+  return searchesDone >= maxSearches
 }
 
-const GetCurrentState = async (query: string): Promise<ReportStatus> => {
-  const reportResponse = await reportSearch(query, fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`))
-
-  return ParseReport(await reportResponse.text())
-}
-/*
-
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [100],
-    addRules: [
-      {
-        id: 100,
-        action: {
-          type: "modifyHeaders",
-          requestHeaders: SpoofUserAgent
-        },
-        condition: {
-          regexFilter: "^https://(www\\.)?bing\\.com/",
-          resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest", "other"]
-        }
-      }
-    ]
-  })
-
-  await MobileSearch()
-
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [100],
-  })
-
-const SpoofUserAgent = [
-  MaskHeader("sec-ch-ua", '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"'),
-  MaskHeader("sec-ch-ua-mobile", "?1"),
-  MaskHeader("sec-ch-ua-platform", '"Android"'),
-  MaskHeader("sec-ch-ua-platform-version", '"15.0.0"'),
-  MaskHeader("sec-fetch-dest", "empty"),
-  MaskHeader("sec-fetch-mode", "cors"),
-  MaskHeader("sec-fetch-site", "cross-site"),
-  MaskHeader(
-    "user-agent",
-    "Mozilla/5.0 (Linux; Android 15; Pixel 8 Pro Build/AP2A.240805.005) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36"
-  ),
-]
-
-
-
-const MobileSearch = async (): Promise<TaskResponse> => {
-  if (has_tag("ignore_mobile_search")) {
-    await Storage.set(StorageKeys.SearchCompletion, true)
-    return TaskResponse.Confirm
-  }
-
-  const completed = await Storage.get(StorageKeys.SearchCompletion)
-  if (completed === true) return TaskResponse.Confirm
-
-  try {
-    if (cached.length < 1) cached = GetSearches()
-    
-    // Pick 150 random queries and apply human variants
-    const raw_queries = cached.sort(() => 0.5 - Math.random()).slice(0, 150)
-    const queries = applyVariantDistribution(raw_queries)
-    
-    // Safely pick a random index without out-of-bounds error
-    const randomIndex = Math.floor(Math.random() * queries.length)
-    const CurrentState = await GetCurrentState(queries[randomIndex])
-
-    if (CurrentState.Failed || !CurrentState.RewardsSessionData) {
-      log.pc_search("Could not initialize initial rewards state.")
-      return TaskResponse.UnknownError
-    }
-
-    log.pc_search("Queries list length:", queries.length, "items")
-
-    let searchesDone = CurrentState.RewardsSessionData.DailySearchPointsEarned ?? 0
-    const maxSearches = 90
-
-    if (searchesDone >= maxSearches) {
-      log.pc_search("Searches already completed for today. Marking as complete.")
-      await Storage.set(StorageKeys.SearchCompletion, true)
-      return TaskResponse.Confirm
-    }
-
-    log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
-
-    for (const query of queries) {
-      if (searchesDone >= maxSearches) break
-
-      try {
-        const [_, report] = await Promise.all([
-          fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`),
-          reportSearch(query)
-        ]);
-
-        const parsed = ParseReport(await report.text());
-        
-        // Safely extract points earned or fallback to default increment (+3)
-        if (!parsed.Failed && parsed.RewardsSessionData)
-          searchesDone = parsed.RewardsSessionData.DailySearchPointsEarned ?? (searchesDone + (parsed.RewardsIncrement || 3));
-        else
-          searchesDone += 3; // Safe default increment on parse failure
-      }
-      catch (e) { 
-        log.pc_search("Failed to search:", e) 
-      }
-
-      await sleep(7000 + Math.random() * 3500)
-    }
-  }
-  catch (e) {
-    log.pc_search("Unknown error:", e)
-    return TaskResponse.UnknownError
-  }
-
-  log.pc_search("Done. Awaiting confirmation")
-  return TaskResponse.Done
-}
-
-*/
-
-const PCSearch = async (): Promise<TaskResponse> => {
-  if (has_tag("ignore_pc_search")) {
-    await Storage.set(StorageKeys.SearchCompletion, true)
-    return TaskResponse.Confirm
-  }
-
-  const completed = await Storage.get(StorageKeys.SearchCompletion)
-  if (completed === true) return TaskResponse.Confirm
-
-  try {
-    if (cached.length < 1) cached = GetSearches()
-    
-    // Pick 150 random queries and apply human variants
-    const raw_queries = cached.sort(() => 0.5 - Math.random()).slice(0, 150)
-    const queries = applyVariantDistribution(raw_queries)
-    
-    // Safely pick a random index without out-of-bounds error
-    const randomIndex = Math.floor(Math.random() * queries.length)
-    const CurrentState = await GetCurrentState(queries[randomIndex])
-
-    if (CurrentState.Failed || !CurrentState.RewardsSessionData) {
-      log.pc_search("Could not initialize initial rewards state.")
-      return TaskResponse.UnknownError
-    }
-
-    log.pc_search("Queries list length:", queries.length, "items")
-
-    let searchesDone = CurrentState.RewardsSessionData.DailySearchPointsEarned ?? 0
-    const maxSearches = 90
-
-    if (searchesDone >= maxSearches) {
-      log.pc_search("Searches already completed for today. Marking as complete.")
-      await Storage.set(StorageKeys.SearchCompletion, true)
-      return TaskResponse.Confirm
-    }
-
-    log.pc_search("Current search progress:", `${searchesDone}/${maxSearches}`)
-
-    for (const query of queries) {
-      if (searchesDone >= maxSearches) break
-
-      try {
-        const report = await reportSearch(query, fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`))
-        const parsed = ParseReport(await report.text());
-        
-        // Safely extract points earned or fallback to default increment (+3)
-        if (!parsed.Failed && parsed.RewardsSessionData)
-          searchesDone = parsed.RewardsSessionData.DailySearchPointsEarned ?? (searchesDone + (parsed.RewardsIncrement || 3));
-        else
-          searchesDone += 3; // Safe default increment on parse failure
-      }
-      catch (e) { 
-        log.pc_search("Failed to search:", e) 
-      }
-
-      await sleep(7000 + Math.random() * 3500)
-    }
-  }
-  catch (e) {
-    log.pc_search("Unknown error:", e)
-    return TaskResponse.UnknownError
-  }
-
-  log.pc_search("Done. Awaiting confirmation")
-  return TaskResponse.Done
-}
-
+// --- ENTRY POINT ---
 export default async (): Promise<TaskResponse> => {
-  const pageDat = await FetchPage()
-  const counter: PointsCounter = (await parseData(pageDat, `\"type\":\"pointbreakdown\"`)).model.pointsCounters
-  console.log(counter, counter.pc, counter.mobile)
+  try {
+    const pageDat = await FetchPage()
+    const parsedData = await RSC(pageDat, `\"type\":\"pointbreakdown\"`)
 
-  if (counter.pc.progress >= counter.pc.max && counter.mobile.progress >= counter.mobile.max)
-    return TaskResponse.Confirm
+    if (!parsedData?.model?.pointsCounters) {
+      log.searches("Could not parse points counters from page response.")
+      return TaskResponse.UnknownError
+    }
 
-  const pc_res = await PCSearch()
+    const { pc } = parsedData.model.pointsCounters
+    log.searches("--- Starting PC Search Phase ---")
+    
+    if (!IsCompleted(pc)) await ExecutePhase(pc)
 
-  return pc_res
+    await Storage.set(StorageKeys.SearchCompletion, true)
+
+    return TaskResponse.Done
+  } catch (e) {
+    console.error("Failed in default search task execution:", e)
+    return TaskResponse.UnknownError
+  }
 }

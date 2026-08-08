@@ -1,23 +1,22 @@
-import { has_tag, log } from "@/expand"
+import { log } from "@/expand"
 import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
-import { ParseActionId, parseData, RouterTree } from "@/rewards/component"
+import { Dashboard, Main, ParseActionId, RSC, RouterTree } from "@/rewards/component"
 import { TaskResponse } from "@/task"
 
 export default async (): Promise<TaskResponse> => {
-    if (has_tag("ignore_points")) return TaskResponse.Ignored
     log.claim_points("Fetching dashboard's raw HTML")
 
-    const fetched = await fetch('https://rewards.bing.com/dashboard');
+    const fetched = await fetch(Main + Dashboard)
     const pageData = await fetched.text()
 
     if (!pageData) return TaskResponse.ParseFailure
     log.claim_points("Parsing available points...")
 
     let parsedHtml: NextFlightData = "00:empty"
-    try { parsedHtml = ScriptList(pageData); } catch {}
+    try { parsedHtml = ScriptList(pageData) } catch {}
     if (parsedHtml == "00:empty") return TaskResponse.ParseFailure
 
-    const parsed_modal = await parseData(parsedHtml, `DashboardHeader_ClaimablePoints`)
+    const parsed_modal = await RSC(parsedHtml, `DashboardHeader_ClaimablePoints`)
     const parsed_button = parsed_modal?.children?.[0]?.[3]
     const parsed_points = parsed_button?.instrument?.data.points as number
     const clickable = parsed_button?.instrument?.click as boolean
@@ -42,48 +41,21 @@ export default async (): Promise<TaskResponse> => {
 
       log.claim_points("Claiming unclaimed", parsed_points, " points...")
 
-      const claimResponse = await fetch("https://rewards.bing.com/dashboard", {
+      const claimResponse = await fetch(Dashboard, {
         "headers": {
           "accept": "text/x-component", "content-type": "text/plain;charset=UTF-8",
           "next-action": claim_action_id, "next-router-state-tree": RouterTree,
           "x-deployment-id": dpl
         },
-        referrer: "https://rewards.bing.com/dashboard",
+        referrer: Dashboard,
         body: "[]",
         method: "POST",
         mode: "cors",
         credentials: "include",
-      });
+      })
 
-      console.log("Claim response:", claimResponse.status)
+      log.claim_points("Claim response:", claimResponse.status)
     }
 
     return TaskResponse.Done
 }
-
-/*
-
-    const stateRouterTree = await parseRouterTree(parsedHtml)
-      log.activities(stateRouterTree)
-
-      const Nodify = (segment: string, val: any, isRoot = false): [ any, any, null, null, number ] => {
-        let parallelRoutes = {};
-
-        if (val && val.children) {
-          const child = val.children;
-          parallelRoutes = { children: Nodify( child[0], child[1], false ) };
-        }
-
-        return [ segment, parallelRoutes, null, null, isRoot ? 16 : 0 ]
-      }
-
-      const ParseTree = (tree: any[]): any => {
-        const s = tree[0]
-        const r = tree[1]
-        return Nodify(s,r,true)
-      }
-
-      const routerStateTree = ParseTree(stateRouterTree)
-      const encodedStateTree = encodeURIComponent(JSON.stringify(routerStateTree))
-
-*/

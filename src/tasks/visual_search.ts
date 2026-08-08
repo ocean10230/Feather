@@ -1,26 +1,23 @@
 import { Storage, StorageKeys } from "@/rewards/utility"
 import { TaskResponse } from "@/task"
 import { log, randomHex } from "@/expand"
-import { ParseReport } from "@/tasks/searches"
-import { ParseSearchComponent } from "@/rewards/component"
+import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/component"
 
-const resolution = [
-    100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600
-]
+const resolution = [ 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600 ]
 
-const report_visual_search = async (query: string, bcid: string, form: string, fetch_prom: Promise<Response>) => {
-    log.pc_search(`Reporting search "${query}" to Microsoft's API for points`)
-    const text = await (await fetch_prom).text()
-
+const report_visual_search = async (query: string, bcid: string, form: string, fetch_prom: Response) => {
+    log.searches(`Reporting visual search (bcid: ${bcid}) to endpoint`)
+    
+    const text = await fetch_prom.text()
     const components = ParseSearchComponent(text)
-
     const IG =  components.IG
     const IID = components.IID
+
     const rdrig = randomHex(32)
 
-    const url = "https://www.bing.com/rewardsapp/reportActivity"
+    const url = Bing + "/rewardsapp/reportActivity"
     const params = new URLSearchParams({ IG, IID, q: query, FORM: form, rdr: "1", rdrig, ajaxreq: "1", bcid })
-    const body = new URLSearchParams({ url: `https://www.bing.com/search?q=${encodeURIComponent(query)}&FORM=${form}&rdr=1&rdrig=${rdrig}`, V: "web" })
+    const body = new URLSearchParams({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}&rdr=1&rdrig=${rdrig}`, V: "web" })
 
     return await fetch(`${url}?${params}`, {
         method: "POST", body, credentials: "include",
@@ -29,7 +26,7 @@ const report_visual_search = async (query: string, bcid: string, form: string, f
 }
 
 export default async (): Promise<TaskResponse> => {
-    const completed = await Storage.get(StorageKeys.SearchCompletion)
+    const completed = await Storage.get(StorageKeys.VisualSearchCompletion)
     if (completed === true) return TaskResponse.Confirm
 
     const width = resolution[Math.floor(Math.random() * resolution.length)]
@@ -55,11 +52,9 @@ export default async (): Promise<TaskResponse> => {
     })
 
     const fetch_params = new URLSearchParams({
-        iss: "sbiupload",
-        FORM: "SBIWEB",
-        sbisrc: "ImgPicker",
+        iss: "sbiupload", FORM: "SBIWEB", sbisrc: "ImgPicker",
         sbifsz: `${width}+x+${height}+·+${Math.round(blob.size / 1024 * 100) / 100}+kB+·+${blob.type.split("/")[1]}`,
-        sbifnm: "random.png",
+        sbifnm: "untitled.jpg",
         thw: String(width),
         thh: String(height),
         ptime: "101",
@@ -73,31 +68,24 @@ export default async (): Promise<TaskResponse> => {
     form.append("imageBin", imageBin)
 
     const response = await fetch(
-        `https://www.bing.com/images/kblob?${fetch_params.toString()}`,
-        {
-            method: "POST",
-            body: form,
-            credentials: "include",
-        }
+        `${Bing}/images/kblob?${fetch_params.toString()}`,
+        { method: "POST", body: form, credentials: "include" }
     )
 
     const data = await response.json()
 
     const redirectUrl = data.redirectUrl
-    const url = new URL(redirectUrl, "https://www.bing.com")
+    const url = new URL(redirectUrl, Bing)
     
     if (!redirectUrl) return TaskResponse.ParseFailure
 
-    // https://www.bing.com/search?q=Windows+10+Desktop+Customization&bcid=S.5FbgfyGjEKIbcgZogpMc0jFOMk.....-c&FORM=SBIWEB&hq=1&rdr=1&rdrig=1C8B73F458EE4ABB9314A7A2498DF776
-
     const params = Object.fromEntries(url.searchParams)
-    const fetchUrl = "https://www.bing.com" + redirectUrl
+    const fetchUrl = Bing + redirectUrl
     
-    const report = await report_visual_search(params.q, params.bcid, fetch_params.get("FORM") || "SBIWEB", fetch(fetchUrl))
+    const report = await report_visual_search(params.q, params.bcid, fetch_params.get("FORM") || "SBIWEB", await fetch(fetchUrl))
     const parsed_state = ParseReport(await report.text())
 
-    if (parsed_state.RewardsSessionData.GiveBalance > 0)
-        return TaskResponse.Confirm
+    if (parsed_state.RewardsSessionData.GiveBalance > 0) return TaskResponse.Confirm
 
     return TaskResponse.Done
 }

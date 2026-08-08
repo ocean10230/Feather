@@ -9,7 +9,9 @@ declare type QuestData = {
   isCompleted: boolean
   isLocked: boolean
   date?: QuestDateFormat
-  isPromotional: boolean | None
+  isPromotional: boolean | None,
+  href?: string
+  isDisabled?: boolean
 }
 
 declare type ReportStatus = {
