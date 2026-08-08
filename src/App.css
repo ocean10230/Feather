@@ -1,23 +1,16 @@
 @import "tailwindcss";
 
-:root {
-  --accent: #31adff;
-  --accent-secondary: #75acff;
-
-  --text-neon: #63ceff;
-
-  --disabled-bg: #0f1729;
-  --disabled-border: #48526c;
-
-  --border: #1e2a45;
-
-  --bg: #0f1729
-}
-
-body {
-  background: black;
-}
-
 html, body {
-  border-radius: 20px
+  background: black;
+  padding: 5px;
+}
+
+:root {
+  --background: #050505
+}
+
+@layer base {
+  .subtle_bg {
+    @apply border-white/40 bg-white/15 p-2 rounded-xl border;
+  }
 }
