@@ -1,4 +1,4 @@
-import { log } from "@/expand";
+import { log } from "./internal";
 
 export const TaskResponse = {
   Done: 0,
@@ -12,13 +12,15 @@ export const TaskResponse = {
   PartialFailure: 9
 } as const
 
+const MappedResponse = ["Done", "Confirm", "UnknownError", "GenFailure", "ParseFailure", "Disabled", "InvalidInfo", "BrowserError", "PartialFailure"]
+
 export const TaskRegistrationStatus = {
   Unknown: 0,
   Success: 1,
   Failed: 2,
   Taken: 3,
   AlreadyDone: 4,
-} as const;
+} as const
 
 export type TaskRegistrationStatus = typeof TaskRegistrationStatus[keyof typeof TaskRegistrationStatus];
 export type TaskResponse = (typeof TaskResponse)[keyof typeof TaskResponse]
@@ -27,7 +29,11 @@ const RegisteredTasks = new Map<string, TaskRegistration>()
 
 export const Register = async (task: TaskRegistration) => {
     if (RegisteredTasks.has(task.name)) return TaskRegistrationStatus.Taken
-
+    const handler = task.handler
+    task.handler = async () => {
+        try { handler() }
+        catch(e) { log.error("Caught an error:",e) }
+    }
     log.task("Registering task:", task.name)
 
     try {
@@ -41,23 +47,6 @@ export const Register = async (task: TaskRegistration) => {
 
     return TaskRegistrationStatus.Success
 }
-
-/*
-export const Remove = async (task: string): Promise<TaskRemovalStatus> => {
-    if (!RegisteredTasks.has(task)) return TaskRemovalStatus.NotFound
-
-    try {
-        RegisteredTasks.delete(task)
-        await chrome.alarms.clear(task)
-    }
-    catch (e) {
-        log.task("Failed to delete task \"" + task + "\".\n Error:", e)
-        return TaskRemovalStatus.Failed
-    }
-
-    return TaskRemovalStatus.Success
-}
-*/
 
 export const Listen = () => {
     for (const Task of RegisteredTasks.values()) {
@@ -82,41 +71,8 @@ export const Listen = () => {
                     return
                 }
 
-                const Result: TaskResponse | string = await Task.handler()
-
-                switch (Result) {
-                    case TaskResponse.Confirm:
-                        log.task(`Task "${Task.name}" is done. Attempt clearing out...`)
-                        RegisteredTasks.delete(Task.name)
-                        await chrome.alarms.clear(Task.name)
-                        break
-                    case TaskResponse.Done:
-                        log.task(`Task "${Task.name}" is done. Awaiting confirmation`)
-                        break
-                    case TaskResponse.Disabled:
-                        if (!Task.disable_logs)
-                            log.task(`Task "${Task.name}" is disabled. Logs for this task will be temporarily be ignored until turned back on`)
-                        else {
-                            Task.disable_logs = true
-                            RegisteredTasks.set(Task.name, Task)
-                        }
-                        break
-                    case TaskResponse.ParseFailure:
-                        log.task(`Task "${Task.name}" was unable to parse some data. Please check console for more`)
-                        break
-                    case TaskResponse.GenerationFailure:
-                        log.task(`Task "${Task.name}" was unable to generate a complete randomized value. Please check console for more`)
-                        break
-                    case TaskResponse.InvalidInformation:
-                        log.task(`Task "${Task.name}" was given invalid data. Please fix immediately`)
-                        break
-                    case TaskResponse.BrowserError:
-                        log.task(`Task "${Task.name}" has encountered browser's internal error. Please check console for more`)
-                        break
-                    default:
-                        log.task(`Task "${Task.name}" has gotten an unknown error/placeholder result. Please check source code for invalid value`)
-                        break
-                }
+                const Result: TaskResponse = await Task.handler()
+                log.task(`Task "${Task.name}" exitted with result id: ${MappedResponse[Result]}`)
             }
         }
         catch (e) {
@@ -124,4 +80,6 @@ export const Listen = () => {
             console.error("Critical error, immediate fix needed:" ,e, "\nFrom ", `"${PendingTask.name}"`)
         }
     })
+
+    setInterval(() => {}, 15000)
 }

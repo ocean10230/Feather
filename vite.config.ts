@@ -19,5 +19,9 @@ export default defineConfig({
       // Points to the current root (src)
       '@': resolve(__dirname, 'src'), 
     },
+  },
+  define: {
+    tabs: "chrome.tabs",
+    runtime: "chrome.runtime"
   }
 })

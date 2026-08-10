@@ -1,6 +1,6 @@
-import { log, randomHex, sleep } from "@/expand"
+import { log, randomHex, sleep } from "@/internal"
 import { GetSearches, Storage, StorageKeys } from "@/rewards/utility"
-import { FetchPage, RSC, ParseSearchComponent, ParseReport } from "@/rewards/component"
+import { FetchPage, RSC, ParseSearchComponent, ParseReport, Bing } from "@/rewards/component"
 import { TaskResponse } from "@/task"
 
 let cached: string[] = []
@@ -64,7 +64,7 @@ const applyVariantDistribution = (queries: string[]): string[] => {
 
 // --- SEARCH REPORTING ---
 const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
-  log.activities(`Reporting search "${q}" to Microsoft's API for points`)
+  log.searches(`Reporting search "${q}" to Microsoft's API for points`)
 
   const text = await (await fetch_prom).text()
   const components = ParseSearchComponent(text)
@@ -85,8 +85,8 @@ const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
     rdrig, ajaxreq: "1",
   })
 
-  const fullSearchUrl = `https://www.bing.com/search?${queryParams.toString()}`
-  const endpoint = `https://www.bing.com/rewardsapp/reportActivity?${queryParams.toString()}`
+  const fullSearchUrl = `${Bing}/search?${queryParams.toString()}`
+  const endpoint = `${Bing}/rewardsapp/reportActivity?${queryParams.toString()}`
 
   const body = new URLSearchParams({
     url: fullSearchUrl, V: "web",
@@ -136,7 +136,7 @@ const ExecutePhase = async (
     try {
       const report = await reportSearch(
         query,
-        fetch(`https://bing.com/search?q=${encodeURIComponent(query)}`)
+        fetch(`${Bing}/search?q=${encodeURIComponent(query)}`)
       )
       const parsed = ParseReport(await report.text())
 
@@ -151,7 +151,7 @@ const ExecutePhase = async (
       log.searches(`Failed to search query "${query}":`, e)
     }
 
-    await sleep(7000 + Math.random() * 3500)
+    await sleep(8000 + Math.random() * 3500)
   }
 
   log.searches(`Phase finished with status: ${searchesDone}/${maxSearches}`)
@@ -170,15 +170,13 @@ export default async (): Promise<TaskResponse> => {
     }
 
     const { pc } = parsedData.model.pointsCounters
-    log.searches("--- Starting PC Search Phase ---")
-    
     if (!IsCompleted(pc)) await ExecutePhase(pc)
 
     await Storage.set(StorageKeys.SearchCompletion, true)
 
     return TaskResponse.Done
   } catch (e) {
-    console.error("Failed in default search task execution:", e)
+    log.error("Failed in default search task execution:", e)
     return TaskResponse.UnknownError
   }
 }

@@ -1,4 +1,5 @@
 import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "@/rewards/search_generation"
+import { Bing, Main } from "./component"
 
 export const Storage = {
     async get(key: string): Promise<StorageData> {
@@ -177,8 +178,6 @@ export const Alarms = {
   VisualSearch: "visual_search"
 }
 
-export const Message = "[ \${extension_name} \${extension_version} ] – [ Note ]\nThis extension is built purely with dedication and does not collect any data or information for analysis/purposes\nIf you encounter any issue, please DM me @ocean10230, your help is appreciated. Thank you!"
-
 export const ScriptList = (html: string): NextFlightData => {
   const scriptList: string[] = [];
   const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
@@ -226,7 +225,7 @@ export const InitializeSpoofing = async () => {
             action: {
                 type: "modifyHeaders",
                 requestHeaders: [
-                    MaskHeader("Origin", "https://rewards.bing.com/")
+                    MaskHeader("Origin", Main)
                 ]
             },
             condition: {
@@ -239,7 +238,7 @@ export const InitializeSpoofing = async () => {
             action: {
                 type: "modifyHeaders",
                 requestHeaders: [
-                    MaskHeader("Origin", "https://bing.com/")
+                    MaskHeader("Origin", Bing)
                 ]
             },
             condition: {
@@ -251,16 +250,19 @@ export const InitializeSpoofing = async () => {
 
     const filtered_rules: chrome.declarativeNetRequest.Rule[] = rules.map((rule, index) => ({
         ...rule,
-        id: index + 1,   // DNR rule IDs must be positive integers
+        id: Math.abs(index + 1),
         priority: 1
     }))
 
     await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: Array.from({ length: rules.length }).map((_,i) => i),
         addRules: filtered_rules
     })
 
-    const res = await fetch("https://rewards.bing.com/dashboard")
+    const res = await fetch(Main + "/dashboard")
     const text = await res.text()
     const deployment_id = text.split("?dpl=")[1].split("\"")[0]
     await Storage.set(StorageKeys.DeploymentId, deployment_id)
 }
+
+export const idk = {}

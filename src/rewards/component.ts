@@ -1,10 +1,12 @@
 import { pcall, Storage, StorageKeys } from "./utility.ts"
-import { log,  sleep } from "../expand.ts"
+import { log,  sleep } from "../internal.ts"
 import { ScriptList } from "./utility.ts"
 
 export const Bing = "https://www.bing.com"
 export const Main = "https://rewards.bing.com"
 export const Dashboard = "https://rewards.bing.com/dashboard"
+
+export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"
 
 // parse the stupid shit
 export const RSC = async (
@@ -39,31 +41,6 @@ export const RSC = async (
       } catch (e) {
         if (e instanceof SyntaxError) {
             console.warn("Got syntax error:", e, json)
-
-          /*
-
-                    const pos = Number(e.message.match(/position (\d+)/)?.[1] ?? -1)
-
-          const context = 120
-          const start = Math.max(0, pos - context)
-          const end = Math.min(json.length, pos + context)
-
-          console.warn(
-            [
-              "Parse failed:",
-              e.message,
-              "",
-              `Line: ${index + 1}`,
-              `JSON position: ${pos}`,
-              "",
-              json.slice(start, end),
-              " ".repeat(Math.max(0, pos - start)) + "^",
-              "",
-              "Chunk of data:",
-              data,
-            ].join("\n"),
-          )
-          */
         } else {
           console.warn("Unknown parse failure:", e)
         }
@@ -189,22 +166,20 @@ export const ParseActionId = async (
 }
 
 export const RefreshSession = async () => {
-    if (Date.now() <= (await Storage.get(StorageKeys.SessionValidateUntil) as number ?? 0))
-        return
-
-    log.initlialize("Initializing extension session...")
+    if (Date.now() <= (await Storage.get(StorageKeys.SessionValidateUntil) as number ?? 0)) return
+    log.initialize("Initializing extension session...")
 
     const url = Dashboard
     const rewardTab = await tabs.create({ url, active: false })
     
     if (!rewardTab.id) return
-    log.initlialize("Opening Microsoft Rewards tab to handle auth redirect...")
+    log.initialize("Opening Microsoft Rewards tab to handle auth redirect...")
 
     await sleep(1500)
     const currentTab = await tabs.get(rewardTab.id).catch(() => null)
 
     if (currentTab?.url === url) {
-        log.initlialize("Session already valid!")
+        log.initialize("Session already valid!")
         try { await tabs.remove(rewardTab.id) } catch {}
         return
     }
@@ -212,7 +187,7 @@ export const RefreshSession = async () => {
     await new Promise<void>((resolve) => {
         const listener = async (tabId: number, changeInfo: any, tab: chrome.tabs.Tab) => {
             if (tabId === rewardTab.id && changeInfo.status === "complete" && tab.url === url) {
-                log.initlialize("Microsoft Rewards page loaded, session refreshed!")
+                log.initialize("Microsoft Rewards page loaded, session refreshed!")
                 tabs.onUpdated.removeListener(listener)
                 resolve()
             }
@@ -225,9 +200,7 @@ export const RefreshSession = async () => {
     await Storage.set(StorageKeys.SessionValidateUntil, Date.now() + 1000 * 60 * 60 * 4)
 }
 
-export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"
-
-import { randomHex } from "@/expand.ts"
+import { randomHex } from "@/internal.ts"
 let cached_IID = ""
 
 export const ParseSearchComponent = (data: string) => {
@@ -259,7 +232,7 @@ export const ExecuteQuest = async (quest: QuestData, dpl?: string): Promise<bool
         referrer: url,
         body: JSON.stringify([
             quest.hash, 11, {
-                isPromotional: "$undefined", offerid: quest,
+                isPromotional: "$undefined", offerid: quest.offerId,
                 timezoneOffset: String(new Date().getTimezoneOffset())
             }
         ]),

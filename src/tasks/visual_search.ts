@@ -1,7 +1,8 @@
 import { Storage, StorageKeys } from "@/rewards/utility"
 import { TaskResponse } from "@/task"
-import { log, randomHex } from "@/expand"
+import { randomHex } from "@/internal"
 import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/component"
+import { log } from "@/internal"
 
 const resolution = [ 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600 ]
 
@@ -73,7 +74,6 @@ export default async (): Promise<TaskResponse> => {
     )
 
     const data = await response.json()
-
     const redirectUrl = data.redirectUrl
     const url = new URL(redirectUrl, Bing)
     

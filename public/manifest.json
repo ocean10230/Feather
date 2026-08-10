@@ -41,5 +41,8 @@
   "action": {
     "default_popup": "index.html",
     "default_title": "Automator"
+  },
+  "options_ui": {
+    "page": "index.html"
   }
 }

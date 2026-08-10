@@ -1,16 +1,16 @@
-import { log } from "@/expand"
 import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
-import { Dashboard, Main, ParseActionId, RSC, RouterTree } from "@/rewards/component"
+import { Dashboard, ParseActionId, RSC, RouterTree } from "@/rewards/component"
 import { TaskResponse } from "@/task"
+import { log } from "@/internal"
 
 export default async (): Promise<TaskResponse> => {
-    log.claim_points("Fetching dashboard's raw HTML")
+    log.points("Fetching dashboard's raw HTML")
 
-    const fetched = await fetch(Main + Dashboard)
+    const fetched = await fetch(Dashboard)
     const pageData = await fetched.text()
 
     if (!pageData) return TaskResponse.ParseFailure
-    log.claim_points("Parsing available points...")
+    log.points("Parsing available points...")
 
     let parsedHtml: NextFlightData = "00:empty"
     try { parsedHtml = ScriptList(pageData) } catch {}
@@ -21,25 +21,25 @@ export default async (): Promise<TaskResponse> => {
     const parsed_points = parsed_button?.instrument?.data.points as number
     const clickable = parsed_button?.instrument?.click as boolean
 
-    log.claim_points("Parsed points:", parsed_points, "Claimable:", clickable)
+    log.points("Parsed points:", parsed_points, "Claimable:", clickable)
 
     if (clickable && parsed_points > 0) {
-      log.claim_points("Getting required paramenters...")
+      log.points("Getting required paramenters...")
       const dpl = await Storage.get(StorageKeys.DeploymentId) as string | None
       
       if (!dpl) {
-        log.claim_points("Failed to parse deployment ID, aborting...")
+        log.points("Failed to parse deployment ID, aborting...")
         return TaskResponse.ParseFailure
       }
 
       const claim_action_id = await ParseActionId(pageData, dpl, "ClaimPoints", ["PointsClaimSidePanel", "earnMoreCta"]) || "Unknown"
       
       if (!claim_action_id || claim_action_id === "Unknown") {
-        log.claim_points("Failed to parse claim action ID, aborting...")
+        log.points("Failed to parse claim action ID, aborting...")
         return TaskResponse.ParseFailure
       }
 
-      log.claim_points("Claiming unclaimed", parsed_points, " points...")
+      log.points("Claiming unclaimed", parsed_points, " points...")
 
       const claimResponse = await fetch(Dashboard, {
         "headers": {
@@ -54,7 +54,7 @@ export default async (): Promise<TaskResponse> => {
         credentials: "include",
       })
 
-      log.claim_points("Claim response:", claimResponse.status)
+      log.points("Claim response:", claimResponse.status)
     }
 
     return TaskResponse.Done
