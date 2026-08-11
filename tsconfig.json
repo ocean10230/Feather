@@ -3,7 +3,7 @@
     "target": "es2023",
     "module": "esnext",
     "lib": ["ES2023", "DOM"],
-    "types": ["vite/client","chrome"],
+    "types": ["vite/client","chrome", "react", "react-dom"],
     "skipLibCheck": true,
 
     /* Bundler mode */

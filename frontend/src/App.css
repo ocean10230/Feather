@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+html, body {
+  background: black;
+  padding: 5px;
+}
+
+:root {
+  --background: #050505
+}
+
+@layer base {
+  .subtle_bg {
+    @apply border-white/40 bg-white/15 p-2 rounded-xl border;
+  }
+}

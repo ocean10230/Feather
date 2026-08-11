@@ -6,4 +6,4 @@ declare global {
   var console_color: Record<string, string>
 }
 
-export {};
+export {}
