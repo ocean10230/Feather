@@ -9,10 +9,6 @@ import activities from "@/tasks/activities"
 import daily_set from "@/tasks/daily_set"
 import visual_search from "@/tasks/visual_search"
 
-const RUN_EVERY_MIN = 30
-const COOLDOWN_MS = RUN_EVERY_MIN * 60 * 1000
-const DEBUG = false
-
 globalThis.api = chrome
 globalThis.runtime = chrome.runtime
 globalThis.tabs = chrome.tabs
@@ -25,14 +21,7 @@ const Initialize = async () => {
 
   await InitConsole()
 
-  const [delayedStart, storedDay] = await Promise.all([
-    Storage.get(StorageKeys.RunAfter) as Promise<number | undefined>,
-    Storage.get(StorageKeys.Today) as Promise<number | undefined>,
-  ])
-
-  const now = Date.now()
-  if (now < (delayedStart ?? 0) && !DEBUG) return
-
+  const storedDay = await Storage.get(StorageKeys.Today)
   const currentDay = new Date().getDay()
 
   if (storedDay !== currentDay) {
@@ -46,7 +35,6 @@ const Initialize = async () => {
   }
 
   await Promise.all([
-    Storage.set(StorageKeys.RunAfter, now + COOLDOWN_MS),
     CleanUp(),
     InitializeSpoofing(),
     RefreshSession()
@@ -64,14 +52,6 @@ const Initialize = async () => {
   Listen()
 }
 
-const WrappedInit = () => {
-  try {
-    Initialize()
-  }
-  catch (e) {
-    console.error("Critical error:", e)
-  }
-}
-
-runtime.onInstalled.addListener(WrappedInit)
-runtime.onStartup.addListener(WrappedInit)
+runtime.onInstalled.addListener(() => Initialize())
+runtime.onStartup.addListener(() => Initialize())
+Initialize()
