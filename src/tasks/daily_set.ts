@@ -1,6 +1,6 @@
 import { log, sleep } from "@/internal"
 import { date, Storage, StorageKeys } from "@/rewards/utility"
-import { RSC, FetchPage, ExecuteQuest, Dashboard } from "@/rewards/component"
+import { RSC, FetchPage, CompleteActivity, Dashboard } from "@/rewards/component"
 import { TaskResponse } from "@/task"
 
 export default async (): Promise<TaskResponse> => {
@@ -21,15 +21,14 @@ export default async (): Promise<TaskResponse> => {
     if (!arr(activities)) return TaskResponse.InvalidInformation
     log.activities("Filtering daily activities list")
 
-    const combinedList = [...activities]
-    const unlockedQuests = combinedList.filter((e: QuestData) => (!e.isCompleted && !e.isLocked && e.points > 0))
+    const unlockedQuests = activities.filter((e: QuestData) => (!e.isCompleted && !e.isLocked && e.points > 0))
     const todayList: QuestData[] = unlockedQuests.filter((e: QuestData) => (e.date ? e.date == date() : true))
     
     if (todayList.length < 1) return TaskResponse.Confirm
     log.activities("Faking daily set completion")
     
     for (const quest of todayList) {
-        await ExecuteQuest(quest)
+        await CompleteActivity(quest)
         await sleep(500 + (Math.random() * 500))
     }
 

@@ -19,7 +19,8 @@
     "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "#/*": ["./frontend/src/*"]
     }
   },
   "include": ["src", "types"]

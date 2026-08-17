@@ -12,23 +12,16 @@ export const Storage = {
 
 export const StorageKeys = {
     Today: "Today_Date",
+
+    // Completion
     SearchCompletion: "Today_SearchCompleted",
     ActivitiesCompletion: "Today_ActivitiesCompletion",
     DailySetCompletion: "Today_DailySetCompletion",
     VisualSearchCompletion: "Today_VisualSearchCompletion",
 
-    MobileSearchRulesetId: "MobileSearchRulesetId",
-    ClaimPointsRulesetId: "ClaimPointsRulesetId",
-    RulesetIdsInitialized: "RulesetIdsInitialized",
-
-    SearchList: "SearchList",
-    SearchListGenerated: "SearchListGenerated",
-    SearchListLength: "SearchListLength",
-
-    WebpackBundleCache: "WebpackBundleCache",
-    WebpackVersion: "WebpackDeploymentId",
     DeploymentId: "DeploymentId",
     ClaimPointsNextActionId: "ClaimPointsNextActionId",
+    ClaimPointsVersion: "ClaimPointsVersion",
 
     QuestsCompletion: "QuestsCompletion",
     ActionCompletionDelay: "QuestsActionCompletionDelayedTo",
@@ -38,7 +31,7 @@ export const StorageKeys = {
 }
 
 export const GetSearches = () => {
-    const data: string[] = [];
+    const data: string[] = []
 
     const year = new Date().getFullYear()
 
@@ -102,20 +95,20 @@ export const GetSearches = () => {
         g => `how to be ${g} quickly`, g => `smart and easy ways to be ${g} quickly`
     ]
 
-    const phone_storage_capacity = ["256GB", "512GB"];
-    const phone_colors = ["Black", "White"];
-    const phone_conditions = ["new", "refurbished"];
+    const phone_storage_capacity = ["256GB", "512GB"]
+    const phone_colors = ["Black", "White"]
+    const phone_conditions = ["new", "refurbished"]
 
     const search_suffixes = [
         "",
         "price", "review", "release date",
         "is still worth buying today",
         "is worth buying nowadays",
-    ];
+    ]
 
     const phones_related: ((g: string) => string[])[] = [
         g => {
-            const results: string[] = [];
+            const results: string[] = []
 
             for (const condition of phone_conditions)
             for (const storage of phone_storage_capacity)
@@ -128,7 +121,7 @@ export const GetSearches = () => {
                     color,
                 ]
                     .filter(Boolean)
-                    .join(" ");
+                    .join(" ")
 
                 results.push(
                     suffix.startsWith("what is")
@@ -140,12 +133,12 @@ export const GetSearches = () => {
                         : suffix
                         ? `${phone} ${suffix}`
                         : phone
-                );
+                )
             }
 
-            return [...new Set(results)];
+            return [...new Set(results)]
         },
-    ];
+    ]
 
     data.push(
         ...expand(games, gameBases, gameExtra),
@@ -179,33 +172,33 @@ export const Alarms = {
 }
 
 export const ScriptList = (html: string): NextFlightData => {
-  const scriptList: string[] = [];
-  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
-  let scriptMatch: RegExpExecArray | null;
+  const scriptList: string[] = []
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
+  let scriptMatch: RegExpExecArray | null
 
   while ((scriptMatch = scriptRegex.exec(html)) !== null) {
-    const scriptContent = scriptMatch[1];
+    const scriptContent = scriptMatch[1]
 
     if (scriptContent.includes("__next_f")) {
-      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s);
+      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s)
 
-      if (!match || !match[1]) continue;
+      if (!match || !match[1]) continue
 
       try {
-        const parsedArray = JSON.parse(match[1]);
-        const lastItem = parsedArray[parsedArray.length - 1];
+        const parsedArray = JSON.parse(match[1])
+        const lastItem = parsedArray[parsedArray.length - 1]
 
         if (lastItem) {
-          scriptList.push(lastItem);
+          scriptList.push(lastItem)
         }
       } catch {
-        continue;
+        continue
       }
     }
   }
 
-  return scriptList.join("\n") as NextFlightData;
-};
+  return scriptList.join("\n") as NextFlightData
+}
 
 export const date=(d=new Date): QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
 
@@ -220,6 +213,11 @@ export const MaskHeader = (header: string, value: string): chrome.declarativeNet
 })
 
 export const InitializeSpoofing = async () => {
+    const Caching = ["earn", "dashboard", "redeem"]
+
+
+    await CleanUp()
+
     const rules: ModifyHeaderDNR[] = [
         {
             action: {
@@ -262,7 +260,9 @@ export const InitializeSpoofing = async () => {
     const res = await fetch(Main + "/dashboard")
     const text = await res.text()
     const deployment_id = text.split("?dpl=")[1].split("\"")[0]
+
     await Storage.set(StorageKeys.DeploymentId, deployment_id)
+    await Promise.all(Caching.map(e => `${Main}/${e}`))
 }
 
 export const idk = {}

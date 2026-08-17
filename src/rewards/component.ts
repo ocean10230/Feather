@@ -5,8 +5,7 @@ import { ScriptList } from "./utility.ts"
 export const Bing = "https://www.bing.com"
 export const Main = "https://rewards.bing.com"
 export const Dashboard = "https://rewards.bing.com/dashboard"
-
-export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22earn%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D"
+export const RouterTree = "%5B%22%22%2C%7B%22children%22%3A%5B%22(nav)%22%2C%7B%22children%22%3A%5B%22dashboard%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%2C4096%5D%7D%2Cnull%2Cnull%2C4096%5D%7D%2Cnull%2Cnull%2C4096%5D%7D%2Cnull%2Cnull%2C4112%5D"
 
 // parse the stupid shit
 export const RSC = async (
@@ -74,96 +73,6 @@ export const FetchPage = async (page: string = Main + "/earn"): Promise<NextFlig
     }
 }
 
-const ParseScriptChunk = (source: string) => {
-    const result: Record<string, string> = {}
-    const specialRegex = /(\d+)\s*===\s*e\s*\?\s*"([^"]+)"/g
-    let match
-
-    while ((match = specialRegex.exec(source)) !== null) result[match[1]] = match[2]
-    const objectRegex = /(\d+)\s*:\s*"([a-f0-9]+)"/g
-
-    while ((match = objectRegex.exec(source)) !== null) {
-        const id = match[1]
-        const hash = match[2]
-        result[id] = `${id}.${hash}.js`
-    }
-
-    return result
-}
-
-export const InitializeWebpackBundleList = async (doc: string, deployment_id: string) => {
-    if (await Storage.get(StorageKeys.WebpackVersion) !== deployment_id) {
-        await Storage.set(StorageKeys.WebpackVersion, deployment_id)
-        await Storage.set(StorageKeys.WebpackBundleCache, "")
-    }
-
-    const found = doc.match(/<script\b[^>]*\bsrc=["'][^"']*\/_next\/static\/chunks\/webpack-[^"']+["'][^>]*>/i)
-    if (!found) return
-
-    const scriptUrl = found[0].match(/src=["']([^"']+)["']/i)?.[1]
-    if (!scriptUrl) return
-
-    await sleep(50)
-
-    const scriptResponse = await fetch(`https://rewards.bing.com${scriptUrl}`)
-    const scriptText = await scriptResponse.text()
-    const chunks = ParseScriptChunk(scriptText)
-
-    const chunk_list: Record<string,string> = {}
-
-    for (const chunk of Object.values(chunks)) {
-        const chunkUrl = `https://rewards.bing.com/_next/static/chunks/${chunk}?dpl=${deployment_id}`
-        const chunkResponse = await fetch(chunkUrl) 
-        chunk_list[chunk] = await chunkResponse.text()
-    }
-
-    await Storage.set(StorageKeys.WebpackBundleCache, JSON.stringify(chunk_list))
-}
-
-export const ParseActionId = async (
-    doc: string, deployment_id: string, 
-    action_name: string, keywords: string | string[]
-): Promise<string | "NOT_FOUND" | undefined> => {
-    const key = action_name + "_" + "ACTION"
-
-    if (deployment_id == await Storage.get(StorageKeys.DeploymentId)) {
-        const v = await Storage.get(key)
-        if (v) return v as string
-    }
-    
-    await InitializeWebpackBundleList(doc, deployment_id)
-    const chunk_list = await Storage.get(StorageKeys.WebpackBundleCache) as string
-    const chunks = JSON.parse(chunk_list)
-
-    const res_list = await Promise.all( Object.keys(chunks).map(chunk_data => fetch(`https://rewards.bing.com/_next/static/chunks/${chunk_data}?dpl=${deployment_id}`)) )
-    const parsed_webpack_bundle = await Promise.all( res_list.map(promise => promise.text()) )
-
-    const parses_action_id = (script: string): string | "Unknown" => {
-        const match = script.match(/createServerReference\)\(["']([^"']+)["']/)
-        return match ? match[1] : "Unknown"
-    }
-
-    const process_id = async (bundle_js: string) => {
-        const parsed = parses_action_id(bundle_js)
-        await Storage.set(key, parsed)
-        if (parsed == "Unknown") log.activities("Failed to parse action id of", action_name)
-        return parsed
-    }
-
-    for (const webpack_bundle of parsed_webpack_bundle) {
-        if (!webpack_bundle.includes(`createServerReference)("`)) continue
-
-        if (Array.isArray(keywords)) {
-            for (const keyword of keywords)
-                if (webpack_bundle.includes(keyword))
-                    return await process_id(webpack_bundle)
-        }
-        else if (webpack_bundle.includes(keywords))
-            return await process_id(webpack_bundle)
-    }
-
-    return "NOT_FOUND"
-}
 
 export const RefreshSession = async () => {
     if (Date.now() <= (await Storage.get(StorageKeys.SessionValidateUntil) as number ?? 0)) return
@@ -211,9 +120,7 @@ export const ParseSearchComponent = (data: string) => {
     return { IG, IID }
 }
 
-export const ExecuteQuest = async (quest: QuestData, dpl?: string): Promise<boolean> => {
-    const url = `https://rewards.bing.com/earn/${quest.offerId.includes("punchcard") ? `quest/${quest.offerId}` : ""}`
-
+export const CompleteActivity = async (quest: QuestData, dpl?: string): Promise<boolean> => {
     if (quest.offerId.includes("punchcard") && !dpl)
         throw new Error("")
 
@@ -221,15 +128,15 @@ export const ExecuteQuest = async (quest: QuestData, dpl?: string): Promise<bool
         "accept": "text/x-component",
         "accept-language": "en-US,enq=0.9",
         "content-type": "text/plaincharset=UTF-8",
-        "next-action": "70babbc81d2724f60d29a95c03b3d739cba77cea92",
+        "next-action": "707e6eb15bdfdd5fba193f0a77e934f7018faf87ce",
         "next-router-state-tree": RouterTree,
     }
 
     if (dpl) headers["x-deployment-id"] = dpl
 
-    const res = await fetch(url, {
+    const res = await fetch(Dashboard, {
         headers,
-        referrer: url,
+        referrer: Dashboard,
         body: JSON.stringify([
             quest.hash, 11, {
                 isPromotional: "$undefined", offerid: quest.offerId,

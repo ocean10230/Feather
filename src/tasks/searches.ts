@@ -6,56 +6,38 @@ import { TaskResponse } from "@/task"
 let cached: string[] = []
 
 const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
-  log.searches(`Reporting search "${q}" to Microsoft's API for points`);
+  log.searches(`Reporting search "${q}" to Microsoft's API for points`)
 
-  const text = await (await fetch_prom).text();
-  const components = ParseSearchComponent(text);
+  const text = await (await fetch_prom).text()
+  const components = ParseSearchComponent(text)
 
   const IG = components.IG
   const IID = components.IID
 
   const queryParams = new URLSearchParams({
-    IG,
-    IID,
-    q,
-    form: "QBLH",
-    sp: "-1",
-    lq: "0",
-    pq: q,
-    sc: "0-12",
-    qs: "n",
-    sk: "",
-    cvid: "ED96545512E0492DAE488BD5B3118DFA",
-    ajaxreq: "1",
-  });
+    IG, IID, q, form: "QBLH", pq: q,
+    cvid: "ED96545512E0492DAE488BD5B3118DFA"
+  })
 
-  const fullSearchUrl = `${Bing}/search?${queryParams.toString()}`;
-  const endpoint = `${Bing}/rewardsapp/reportActivity?${queryParams.toString()}`;
+  const fullSearchUrl = `${Bing}/search?${queryParams.toString()}`
 
-  const body = new URLSearchParams({
-    url: fullSearchUrl,
-    V: "web",
-  });
-
-  return await fetch(endpoint, {
+  return await fetch(`${Bing}/rewardsapp/reportActivity?${queryParams.toString()}`, {
     method: "POST",
     mode: "cors",
     credentials: "include",
     headers: {
-      accept: "*/*",
-      ect: "4g",
-      priority: "u=1, i",
+      accept: "*/*", ect: "4g", priority: "u=1, i",
       "content-type": "application/x-www-form-urlencoded",
     },
     referrer: fullSearchUrl,
-    body: body.toString(),
-  });
+    body: new URLSearchParams({ url: fullSearchUrl, V: "web" }).toString(),
+  })
 }
-
 
 const IsCompleted = (counter?: SearchInfo) => Boolean(counter && counter.progress >= counter.max)
 
 // --- CORE SEARCH LOOP ---
+
 const ExecutePhase = async (
   counter: SearchInfo
 ): Promise<boolean> => {

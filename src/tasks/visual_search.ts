@@ -1,6 +1,5 @@
 import { Storage, StorageKeys } from "@/rewards/utility"
 import { TaskResponse } from "@/task"
-import { randomHex } from "@/internal"
 import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/component"
 import { log } from "@/internal"
 
@@ -14,11 +13,9 @@ const report_visual_search = async (query: string, bcid: string, form: string, f
     const IG =  components.IG
     const IID = components.IID
 
-    const rdrig = randomHex(32)
-
     const url = Bing + "/rewardsapp/reportActivity"
-    const params = new URLSearchParams({ IG, IID, q: query, FORM: form, rdr: "1", rdrig, ajaxreq: "1", bcid })
-    const body = new URLSearchParams({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}&rdr=1&rdrig=${rdrig}`, V: "web" })
+    const params = new URLSearchParams({ IG, IID, q: query, FORM: form, bcid })
+    const body = new URLSearchParams({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}`, V: "web" })
 
     return await fetch(`${url}?${params}`, {
         method: "POST", body, credentials: "include",

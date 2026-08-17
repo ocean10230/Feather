@@ -1,4 +1,4 @@
-const gamesWithMaps_base = ["minecraft","elden ring","skyrim","gta v","sea of thieves","among us","ark: survival evolved","rust","valheim","terraria","no man's sky","subnautica","the forest","dayz","7 days to die","apex legends","fortnite","battlefield 2042","dota 2","league of legends","smite","world of warcraft","final fantasy xiv","guild wars 2","black desert online","runescape","path of exile","diablo iv","monster hunter world","far cry 6","just cause 4","watch dogs 2","cyberpunk 2077","geometry dash","gta san andreas","gta vice city","gta iv","gta iii","forza horizon 5","ets2","red dead redemption 2"]
+const gamesWithMaps_base = ["minecraft","mc","mcbe","mc java","minecraft java","minecraft bedrock","elden ring","skyrim","gta v enhanced online","gta online","fivem","gta v online","sea of thieves","among us","ark: survival evolved","rust","valheim","terraria","no man's sky","subnautica","the forest","dayz","7 days to die","apex legends","fortnite","battlefield 2042","dota 2","league of legends","smite","world of warcraft","final fantasy xiv","guild wars 2","black desert online","runescape","path of exile","diablo iv","monster hunter world","far cry 6","just cause 4","watch dogs 2","cyberpunk 2077","geometry dash","gta san andreas","gta vice city","gta iv","gta iii","forza horizon 5","ets2","red dead redemption 2"]
 
 export const socialMedias = [
     "facebook","instagram","twitter","tiktok","snapchat","linkedin","youtube","reddit","pinterest","tumblr","discord","twitch","clubhouse",
@@ -8,7 +8,20 @@ export const socialMedias = [
     "kik","amino","fanpop","couchsurfing","meetup","substack"
 ]
 
-export const toBe = ["successful","productive","good at something","cool","rich","a billionare","a millionare","a trillionare","rich guy","motivated","sigma","gooning","touching grass"]
+export const toBe = [
+  "successful",
+  "productive",
+  "good at something",
+  "cool","rich",
+  "a billionare",
+  "a millionare", "less sad",
+  "a trillionare", "joyful",
+  "rich guy", "a person with great childhood",
+  "motivated", "a kid",
+  "sigma", "a kid again",
+  "touching grass",
+  "touch grass", "happy"
+]
 
 export const games: string[] = [
     'resident evil','roblox','gta','gta v','gta iv','gta sa','gta vc','gta vc stories','gta iii',
@@ -66,7 +79,8 @@ export const components_base = [
   "i5 12400f", "i5 13400f", "i3 12100f", "i5 10400f",
   "ddr4 ram 16gb", "ddr5 ram 32gb", "1tb nvme ssd", "2tb nvme ssd",
   "budget B550 motherboard", "b650 motherboard", "650w psu gold",
-  "budget cpu cooler", "thermalright peerless assassin 120", "budget pc case"
+  "budget cpu cooler", "thermalright peerless assassin 120", "budget pc case",
+  "corsair rams", "kingston rams"
 ]
 
 export const hardwareBases: ((h: string) => string)[] = [

@@ -1,6 +1,6 @@
 import { log, sleep } from "@/internal"
 import { date, Storage, StorageKeys } from "@/rewards/utility"
-import { RSC, FetchPage, ExecuteQuest } from "@/rewards/component"
+import { RSC, FetchPage, CompleteActivity} from "@/rewards/component"
 import { TaskResponse } from "@/task"
 
 export default async (): Promise<TaskResponse> => {
@@ -29,7 +29,7 @@ export default async (): Promise<TaskResponse> => {
     log.activities("Faking activities completion")
     
     for (const quest of todayList) {
-        await ExecuteQuest(quest)
+        await CompleteActivity(quest)
         await sleep(500 + (Math.random() * 500))
     }
 

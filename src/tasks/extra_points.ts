@@ -1,7 +1,58 @@
 import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
-import { Dashboard, ParseActionId, RSC, RouterTree } from "@/rewards/component"
+import { Dashboard, RSC, RouterTree } from "@/rewards/component"
 import { TaskResponse } from "@/task"
 import { log } from "@/internal"
+
+const GetActionID = async (dpl: string) => {
+    if ((await Storage.get(StorageKeys.ClaimPointsVersion)) as string == dpl) return await Storage.get(StorageKeys.ClaimPointsNextActionId) as string
+
+    const seen = new Map()
+    let returner = "not_found"
+
+    const fetchScript = async (url: string) => {
+        if (seen.has(url)) return
+        if (!url.includes("?dpl=")) return
+
+        try {
+            const response = await fetch(url)
+
+            if (!response.ok) {
+                console.warn(`Failed to fetch ${url}: ${response.status}`)
+                return
+            }
+
+            const text = await response.text()
+            seen.set(url, text)
+
+            for (const match of text.matchAll(
+                /(?:["'`])((?:\.\.?\/|\/)?[^"'`\s]+\.js(?:[?#][^"'`\s]*)?)(?:["'`])/gi
+            )) {
+                const childPath = match[1]
+                const childUrl = new URL(childPath, url).href
+                await fetchScript(childUrl)
+            }
+        } catch (err) {
+            console.warn(`Failed to fetch ${url}`, err)
+        }
+    }
+
+    for (const match of document.documentElement.innerHTML.matchAll(
+        /<script\b[^>]*\bsrc\s*=\s*["']([^"']+\.js(?:[?#][^"']*)?)["']/gi
+    )) {
+        const src = match[1]
+        const url = new URL(src, location.href).href
+        await fetchScript(url)
+    }
+
+    seen.forEach((content) => {
+        if (content.includes("createServerReference") && content.toLowerCase().includes("claimallpoints"))
+        returner = content as string
+    })
+
+    Storage.set(StorageKeys.ClaimPointsNextActionId, returner)
+
+    return returner
+}
 
 export default async (): Promise<TaskResponse> => {
     log.points("Fetching dashboard's raw HTML")
@@ -32,7 +83,7 @@ export default async (): Promise<TaskResponse> => {
         return TaskResponse.ParseFailure
       }
 
-      const claim_action_id = await ParseActionId(pageData, dpl, "ClaimPoints", ["PointsClaimSidePanel", "earnMoreCta"]) || "Unknown"
+      const claim_action_id = await GetActionID(dpl) 
       
       if (!claim_action_id || claim_action_id === "Unknown") {
         log.points("Failed to parse claim action ID, aborting...")

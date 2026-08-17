@@ -1,4 +1,4 @@
-import { Storage, StorageKeys, Alarms, CleanUp, InitializeSpoofing } from "@/rewards/utility"
+import { Storage, StorageKeys, Alarms, InitializeSpoofing } from "@/rewards/utility"
 import { Listen, Register } from "@/task"
 import { RefreshSession } from "@/rewards/component"
 import { InitConsole, log } from "@/internal"
@@ -35,7 +35,6 @@ const Initialize = async () => {
   }
 
   await Promise.all([
-    CleanUp(),
     InitializeSpoofing(),
     RefreshSession()
   ])

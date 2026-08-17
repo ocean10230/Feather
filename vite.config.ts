@@ -4,8 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  root: resolve(__dirname, 'frontend'),
-
   plugins: [
     react(),
     tailwindcss(),
@@ -13,7 +11,8 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'frontend/src'),
+      '@': resolve(__dirname, 'src'),
+      '#': resolve(__dirname, 'frontend/src'),
     },
   },
 
@@ -21,7 +20,7 @@ export default defineConfig({
     minify: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'frontend/index.html'),
+        main: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/background.ts'),
       },
       output: {
