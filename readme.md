@@ -55,6 +55,9 @@ Here is a step by step guide on how to build the extension yourself (if you have
 2. Build the project
    ```bash
    npm install
-   npm run build
+   npm run 
+   ```
+
+   Made with passion, not affiliated with Microsoft
    ```
 3. Import the build into your browser
