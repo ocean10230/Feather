@@ -1,7 +1,7 @@
-import { Storage, StorageKeys } from "@/rewards/utility"
-import { TaskResponse } from "@/task"
-import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/component"
-import { log } from "@/internal"
+import { Storage, StorageKeys } from "shared/storage.ts"
+import { TaskResponse } from "@/internal/task"
+import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/parser"
+import { log } from "shared/log.ts"
 
 const resolution = [ 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600 ]
 

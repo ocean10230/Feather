@@ -1,7 +1,9 @@
-import { log, sleep } from "@/internal"
-import { date, Storage, StorageKeys } from "@/rewards/utility"
-import { RSC, FetchPage, CompleteActivity, Dashboard } from "@/rewards/component"
-import { TaskResponse } from "@/task"
+import { sleep } from "@/internal/util"
+import { Storage, StorageKeys } from "shared/storage.ts"
+import { ActivitiesValidator, CompleteActivity } from "@/rewards/component"
+import { TaskResponse } from "@/internal/task"
+import { Dashboard, FetchPage, RSC } from "@/rewards/parser"
+import { log } from 'shared/log'
 
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.DailySetCompletion)
@@ -12,26 +14,20 @@ export default async (): Promise<TaskResponse> => {
 
     if (!pageData) return TaskResponse.ParseFailure
 
-    log.activities("Parsing activities list from HTML")
-    const arr = Array.isArray
-    const parsed_activities = await RSC(pageData, `\"DailySetSection\"`)
-    const activities = parsed_activities.children[3].dailySetItems
+    log.activities("Parsing daily list from HTML")
+    const parsed = (await RSC(pageData, `\"partner\":\"dailyset\"`))?.children[1][3].model.dailySetItems
+    const activities = ActivitiesValidator(parsed)
 
-    log.activities("Validating daily activities list", parsed_activities, )
-    if (!arr(activities)) return TaskResponse.InvalidInformation
-    log.activities("Filtering daily activities list")
+    if (!activities) return TaskResponse.InvalidInformation
+    if (activities.length < 1) return TaskResponse.Confirm
 
-    const unlockedQuests = activities.filter((e: QuestData) => (!e.isCompleted && !e.isLocked && e.points > 0))
-    const todayList: QuestData[] = unlockedQuests.filter((e: QuestData) => (e.date ? e.date == date() : true))
-    
-    if (todayList.length < 1) return TaskResponse.Confirm
     log.activities("Faking daily set completion")
     
-    for (const quest of todayList) {
+    for (const quest of activities) {
         await CompleteActivity(quest)
         await sleep(500 + (Math.random() * 500))
     }
-
+ 
 
     return TaskResponse.Done
   }

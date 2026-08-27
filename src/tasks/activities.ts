@@ -1,7 +1,9 @@
-import { log, sleep } from "@/internal"
-import { date, Storage, StorageKeys } from "@/rewards/utility"
-import { RSC, FetchPage, CompleteActivity} from "@/rewards/component"
-import { TaskResponse } from "@/task"
+import { sleep } from "@/internal/util"
+import { log } from "shared/log.ts"
+import { Storage, StorageKeys } from "shared/storage.ts"
+import { ActivitiesValidator, CompleteActivity } from "@/rewards/component"
+import { TaskResponse } from "@/internal/task"
+import { FetchPage, RSC } from "@/rewards/parser"
 
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.ActivitiesCompletion)
@@ -14,21 +16,18 @@ export default async (): Promise<TaskResponse> => {
 
     log.activities("Parsing activities list from HTML")
 
-    const arr = Array.isArray
-    const parsed_activities = await RSC(pageData, "MoreActivities")
-    const activities = (parsed_activities.children as Array<Record<string, any>>)?.at(-1)?.activityCards
+    const parsed_rsc = await RSC(pageData, "MoreActivities")
+    const parsed = parsed_rsc.children.at(-1).activityCards
+    const activities = ActivitiesValidator(parsed)
 
     log.activities("Validating activities list")
-    if (!arr(activities)) return TaskResponse.InvalidInformation
+    
+    if (!activities) return TaskResponse.InvalidInformation
+    if (activities.length < 1) return TaskResponse.Confirm
 
-    const combinedList = [...activities]
-    const unlockedQuests = combinedList.filter((e: QuestData) => (!e.isCompleted && !e.isLocked && e.points > 0))
-    const todayList: QuestData[] = unlockedQuests.filter((e: QuestData) => (e.date ? e.date == date() : true))
-
-    if (todayList.length < 1) return TaskResponse.Confirm
     log.activities("Faking activities completion")
     
-    for (const quest of todayList) {
+    for (const quest of activities) {
         await CompleteActivity(quest)
         await sleep(500 + (Math.random() * 500))
     }

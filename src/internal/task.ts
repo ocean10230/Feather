@@ -1,4 +1,5 @@
-import { log } from "./internal";
+import { pcall } from "@/rewards/utility";
+import { log } from "shared/log"
 
 export const TaskResponse = {
   Done: 0,
@@ -30,20 +31,12 @@ const RegisteredTasks = new Map<string, TaskRegistration>()
 export const Register = async (task: TaskRegistration) => {
     if (RegisteredTasks.has(task.name)) return TaskRegistrationStatus.Taken
     const handler = task.handler
-    task.handler = async () => {
-        try { handler() }
-        catch(e) { log.error("Caught an error:",e) }
-    }
+
+    task.handler = async () => pcall(handler)
     log.task("Registering task:", task.name)
 
-    try {
-        await chrome.alarms.create(task.name, { periodInMinutes: task.interval })
-        RegisteredTasks.set(task.name, task)
-    }
-    catch (e) {
-        log.task("Failed to register task \"" + task.name + "\". Error:", e)
-        return TaskRegistrationStatus.Failed
-    }
+    await chrome.alarms.create(task.name, { periodInMinutes: task.interval })
+    RegisteredTasks.set(task.name, task)
 
     return TaskRegistrationStatus.Success
 }

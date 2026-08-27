@@ -1,7 +1,9 @@
-import { log, sleep } from "@/internal"
-import { GetSearches, Storage, StorageKeys } from "@/rewards/utility"
-import { FetchPage, RSC, ParseSearchComponent, ParseReport, Bing } from "@/rewards/component"
-import { TaskResponse } from "@/task"
+import { sleep } from "@/internal/util"
+import { GetSearches} from "@/rewards/utility"
+import { Storage, StorageKeys } from "shared/storage.ts"
+import { FetchPage, RSC, ParseSearchComponent, ParseReport, Bing } from "@/rewards/parser"
+import { TaskResponse } from "@/internal/task"
+import { log } from "shared/log.ts"
 
 let cached: string[] = []
 

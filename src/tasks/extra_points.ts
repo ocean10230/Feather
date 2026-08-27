@@ -1,57 +1,51 @@
-import { ScriptList, StorageKeys, Storage } from "@/rewards/utility"
-import { Dashboard, RSC, RouterTree } from "@/rewards/component"
-import { TaskResponse } from "@/task"
-import { log } from "@/internal"
+import { ScriptList } from "@/rewards/utility"
+import { Dashboard, RouterTree, RSC } from "@/rewards/parser"
+import { TaskResponse } from "@/internal/task"
+import { log } from "shared/log.ts"
+import { Storage, StorageKeys } from "shared/storage"
 
-const GetActionID = async (dpl: string) => {
-    if ((await Storage.get(StorageKeys.ClaimPointsVersion)) as string == dpl) return await Storage.get(StorageKeys.ClaimPointsNextActionId) as string
+const GetActionID = async (dpl: string): Promise<string> => {
+  if (((await Storage.get(StorageKeys.ClaimPointsNextActionId)) as string).split("_")[1] == dpl) return await Storage.get(StorageKeys.ClaimPointsNextActionId) as string
 
-    const seen = new Map()
-    let returner = "not_found"
+  const visited = new Set<string>(), queue: string[] = [Dashboard]
 
-    const fetchScript = async (url: string) => {
-        if (seen.has(url)) return
-        if (!url.includes("?dpl=")) return
+  const url = (x: string, b: string): string | null => {
+    if (x.startsWith("static/")) x = "/_next/" + x
+    if (!x.includes("?dpl=")) x = x + "?dpl=" + dpl
+    try { return new URL(x, b).href } catch { return null }
+  }
 
-        try {
-            const response = await fetch(url)
+  const scripts = (c: string, b: string): Set<string> => {
+    const s = new Set<string>()
+    for (const m of c.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)) { const x = url(m[1], b); if (x) s.add(x) }
+    for (const m of c.matchAll(/\bimport\s*\(\s*["']([^"']+)["']\s*\)/gi)) { const x = url(m[1], b); if (x) s.add(x) }
+    for (const m of c.matchAll(/\brequire\s*\(\s*["']([^"']+)["']\s*\)/gi)) { const x = url(m[1], b); if (x) s.add(x) }
+    for (const m of c.matchAll(/["'](static\/[^"']+\.js(?:\?[^"']*)?)["']/gi)) { const x = url(m[1], b); if (x) s.add(x) }
+    return s
+  }
 
-            if (!response.ok) {
-                console.warn(`Failed to fetch ${url}: ${response.status}`)
-                return
-            }
+  const action = (c: string): string | null => {
+    if (!c.includes("reportClaim")) return null
+    return c.match(/createServerReference\)\(["']([^"']+)["']/)?.[1] || null
+  }
 
-            const text = await response.text()
-            seen.set(url, text)
+  while (queue.length) {
+    const u = queue.shift()!
+    if (visited.has(u)) continue
+    visited.add(u)
 
-            for (const match of text.matchAll(
-                /(?:["'`])((?:\.\.?\/|\/)?[^"'`\s]+\.js(?:[?#][^"'`\s]*)?)(?:["'`])/gi
-            )) {
-                const childPath = match[1]
-                const childUrl = new URL(childPath, url).href
-                await fetchScript(childUrl)
-            }
-        } catch (err) {
-            console.warn(`Failed to fetch ${url}`, err)
-        }
+    const r = await fetch(u)
+    if (!r.ok) continue
+    const c = await r.text()
+    const a = action(c)
+    if (a) {
+      Storage.set(StorageKeys.ClaimPointsNextActionId, a + "_" + dpl)
+      return a
     }
+    for (const s of scripts(c, u)) if (!visited.has(s)) queue.push(s)
+  }
 
-    for (const match of document.documentElement.innerHTML.matchAll(
-        /<script\b[^>]*\bsrc\s*=\s*["']([^"']+\.js(?:[?#][^"']*)?)["']/gi
-    )) {
-        const src = match[1]
-        const url = new URL(src, location.href).href
-        await fetchScript(url)
-    }
-
-    seen.forEach((content) => {
-        if (content.includes("createServerReference") && content.toLowerCase().includes("claimallpoints"))
-        returner = content as string
-    })
-
-    Storage.set(StorageKeys.ClaimPointsNextActionId, returner)
-
-    return returner
+  return "not_found"
 }
 
 export default async (): Promise<TaskResponse> => {
@@ -73,6 +67,8 @@ export default async (): Promise<TaskResponse> => {
     const clickable = parsed_button?.instrument?.click as boolean
 
     log.points("Parsed points:", parsed_points, "Claimable:", clickable)
+    const dpl = await Storage.get(StorageKeys.DeploymentId) as string
+    log.points("Parsed ActionID", GetActionID(dpl))
 
     if (clickable && parsed_points > 0) {
       log.points("Getting required paramenters...")
@@ -85,7 +81,7 @@ export default async (): Promise<TaskResponse> => {
 
       const claim_action_id = await GetActionID(dpl) 
       
-      if (!claim_action_id || claim_action_id === "Unknown") {
+      if (!claim_action_id || claim_action_id === "not_found") {
         log.points("Failed to parse claim action ID, aborting...")
         return TaskResponse.ParseFailure
       }
@@ -94,7 +90,7 @@ export default async (): Promise<TaskResponse> => {
 
       const claimResponse = await fetch(Dashboard, {
         "headers": {
-          "accept": "text/x-component", "content-type": "text/plain;charset=UTF-8",
+          "accept": "text/x-component", "content-type": "text/plaincharset=UTF-8",
           "next-action": claim_action_id, "next-router-state-tree": RouterTree,
           "x-deployment-id": dpl
         },

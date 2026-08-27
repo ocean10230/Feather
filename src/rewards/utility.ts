@@ -1,34 +1,7 @@
-import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "@/rewards/search_generation"
-import { Bing, Main } from "./component"
+import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "@/rewards/search"
+import { Bing, Main } from "@/rewards/parser"
 
-export const Storage = {
-    async get(key: string): Promise<StorageData> {
-        return (await chrome.storage.local.get(key))[key] as StorageData
-    },
-    async set(key: string, value: StorageData): Promise<void> {
-        await chrome.storage.local.set({ [key]: value })
-    }
-}
-
-export const StorageKeys = {
-    Today: "Today_Date",
-
-    // Completion
-    SearchCompletion: "Today_SearchCompleted",
-    ActivitiesCompletion: "Today_ActivitiesCompletion",
-    DailySetCompletion: "Today_DailySetCompletion",
-    VisualSearchCompletion: "Today_VisualSearchCompletion",
-
-    DeploymentId: "DeploymentId",
-    ClaimPointsNextActionId: "ClaimPointsNextActionId",
-    ClaimPointsVersion: "ClaimPointsVersion",
-
-    QuestsCompletion: "QuestsCompletion",
-    ActionCompletionDelay: "QuestsActionCompletionDelayedTo",
-
-    SessionValidateUntil: "SessionValidateUntil",
-    RunAfter: "RunAgainAfter"
-}
+import { Storage, StorageKeys } from "shared/storage.ts"
 
 export const GetSearches = () => {
     const data: string[] = []
@@ -152,7 +125,6 @@ export const GetSearches = () => {
     return data
 }
 
-// i love lua
 export const pcall = async <T>(func: () => Promise<T> | T): Promise<[T | any, boolean]> => {
   try {
     const result = await func()

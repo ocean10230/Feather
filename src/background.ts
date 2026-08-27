@@ -1,7 +1,8 @@
-import { Storage, StorageKeys, Alarms, InitializeSpoofing } from "@/rewards/utility"
-import { Listen, Register } from "@/task"
+import { Alarms, InitializeSpoofing } from "@/rewards/utility"
+import { Storage, StorageKeys } from "shared/storage.ts"
+import { Listen, Register } from "@/internal/task"
+import { log } from "shared/log.ts"
 import { RefreshSession } from "@/rewards/component"
-import { InitConsole, log } from "@/internal"
 
 import pc_search from "@/tasks/searches"
 import extra_points from "@/tasks/extra_points"
@@ -19,8 +20,6 @@ const Initialize = async () => {
   if (ExtensionStarted) return
   ExtensionStarted = true
 
-  await InitConsole()
-
   const storedDay = await Storage.get(StorageKeys.Today)
   const currentDay = new Date().getDay()
 
@@ -35,11 +34,11 @@ const Initialize = async () => {
   }
 
   await Promise.all([
-    InitializeSpoofing(),
-    RefreshSession()
+    InitializeSpoofing()
   ])
 
   await Promise.all([
+    Register({ name: "SessionRefresh", interval: 30, handler: RefreshSession }),
     Register({ name: Alarms.Activties, interval: 2, handler: activities }),
     Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search }),
     Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points }),
