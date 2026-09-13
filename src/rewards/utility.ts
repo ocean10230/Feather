@@ -1,7 +1,7 @@
 import { games, socialMedias, toBe, gamesWithMaps, phones, components_base, hardwareBases } from "@/rewards/search"
 import { Bing, Main } from "@/rewards/parser"
 
-import { Storage, StorageKeys } from "shared/storage.ts"
+import { Storage, StorageKeys } from "shared/storage"
 
 export const GetSearches = () => {
     const data: string[] = []
@@ -152,20 +152,13 @@ export const ScriptList = (html: string): NextFlightData => {
     const scriptContent = scriptMatch[1]
 
     if (scriptContent.includes("__next_f")) {
-      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s)
-
-      if (!match || !match[1]) continue
+      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s)?.[1]
+      if (!match) continue
 
       try {
-        const parsedArray = JSON.parse(match[1])
-        const lastItem = parsedArray[parsedArray.length - 1]
-
-        if (lastItem) {
-          scriptList.push(lastItem)
-        }
-      } catch {
-        continue
-      }
+        const parsed = json.parse(match).at(-1)
+        parsed && scriptList.push(parsed)
+      } catch { continue }
     }
   }
 
@@ -175,28 +168,21 @@ export const ScriptList = (html: string): NextFlightData => {
 export const date=(d=new Date): QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
 
 export const CleanUp = async () => {
-    const rules = await chrome.declarativeNetRequest.getDynamicRules()
-    const ruleIds = rules.map(rule => rule.id)
-    await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: ruleIds })
+    const rules = await declare.getDynamicRules()
+    await declare.updateDynamicRules({ removeRuleIds: rules.map(rule => rule.id) })
 }
 
-export const MaskHeader = (header: string, value: string): chrome.declarativeNetRequest.ModifyHeaderInfo => ({
-    header, value, operation: "set"
-})
+export const MaskHeader = (header: string, value: string): chrome.declarativeNetRequest.ModifyHeaderInfo => 
+({ header, value, operation: "set" })
 
 export const InitializeSpoofing = async () => {
-    const Caching = ["earn", "dashboard", "redeem"]
-
-
     await CleanUp()
+    const type = "modifyHeaders"
 
     const rules: ModifyHeaderDNR[] = [
         {
             action: {
-                type: "modifyHeaders",
-                requestHeaders: [
-                    MaskHeader("Origin", Main)
-                ]
+                type, requestHeaders: [ MaskHeader("Origin", Main) ]
             },
             condition: {
                 regexFilter: "^https://(www\\.)?rewards\\.bing\\.com/",
@@ -206,10 +192,7 @@ export const InitializeSpoofing = async () => {
 
         {
             action: {
-                type: "modifyHeaders",
-                requestHeaders: [
-                    MaskHeader("Origin", Bing)
-                ]
+                type, requestHeaders: [ MaskHeader("Origin", Bing) ]
             },
             condition: {
                 regexFilter: "^https://(www\\.)?bing\\.com/",
@@ -218,23 +201,14 @@ export const InitializeSpoofing = async () => {
         }
     ]
 
-    const filtered_rules: chrome.declarativeNetRequest.Rule[] = rules.map((rule, index) => ({
-        ...rule,
-        id: Math.abs(index + 1),
-        priority: 1
-    }))
-
-    await chrome.declarativeNetRequest.updateDynamicRules({
+    await declare.updateDynamicRules({
         removeRuleIds: Array.from({ length: rules.length }).map((_,i) => i),
-        addRules: filtered_rules
+        addRules: rules.map((rule, index) => ({
+            ...rule,
+            id: math.abs(index + 1),
+            priority: 1
+        }))
     })
 
-    const res = await fetch(Main + "/dashboard")
-    const text = await res.text()
-    const deployment_id = text.split("?dpl=")[1].split("\"")[0]
-
-    await Storage.set(StorageKeys.DeploymentId, deployment_id)
-    await Promise.all(Caching.map(e => `${Main}/${e}`))
+    await Storage.set(StorageKeys.DeploymentId, (await (await curl(Main + "/dashboard")).text()).split("?dpl=")[1].split("\"")[0])
 }
-
-export const idk = {}

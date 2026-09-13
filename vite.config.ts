@@ -22,7 +22,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        background: resolve(__dirname, 'src/background.ts'),
+        background: resolve(__dirname, 'src/background'),
       },
       output: {
         entryFileNames: 'scripts/[name].js',

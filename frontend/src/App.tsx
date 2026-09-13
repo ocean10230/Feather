@@ -32,10 +32,10 @@ const Number = ({ from, to }: { from: number; to: number }) => {
     spring.set(to)
 
     return spring.on("change", (latest) => {
-      if (Math.round(to) > to)
-        setValue(Math.round(latest * 10) / 10)
+      if (math.round(to) > to)
+        setValue(math.round(latest * 10) / 10)
       else
-        setValue(Math.round(latest))
+        setValue(math.round(latest))
     })
   }, [to, spring])
 
@@ -52,7 +52,7 @@ const Tracker = ({ progress }: { progress: number }) => {
 
   useEffect(() => {
     return spring.on("change", (latest) => {
-      setValue(Math.round(latest))
+      setValue(math.round(latest))
     })
   }, [spring])
 

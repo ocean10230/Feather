@@ -1,26 +1,19 @@
 const gamesWithMaps_base = ["minecraft","mc","mcbe","mc java","minecraft java","minecraft bedrock","elden ring","skyrim","gta v enhanced online","gta online","fivem","gta v online","sea of thieves","among us","ark: survival evolved","rust","valheim","terraria","no man's sky","subnautica","the forest","dayz","7 days to die","apex legends","fortnite","battlefield 2042","dota 2","league of legends","smite","world of warcraft","final fantasy xiv","guild wars 2","black desert online","runescape","path of exile","diablo iv","monster hunter world","far cry 6","just cause 4","watch dogs 2","cyberpunk 2077","geometry dash","gta san andreas","gta vice city","gta iv","gta iii","forza horizon 5","ets2","red dead redemption 2"]
 
 export const socialMedias = [
-    "facebook","instagram","twitter","tiktok","snapchat","linkedin","youtube","reddit","pinterest","tumblr","discord","twitch","clubhouse",
-    "mastodon","bluesky","threads", "wechat","qq","qzone","line","kakaotalk","viber","telegram","signal","whatsapp","messenger",
-    "weibo","douyin","vk","odnoklassniki","mixi", "baidu tieba","nextdoor","peach","ello","diaspora","minds","steemit","gab","parler","truth social","gettr",
-    "mewe","yubo", "vimeo","flickr","deviantart", "soundcloud","bandcamp","audius","last.fm","mixcloud",
-    "kik","amino","fanpop","couchsurfing","meetup","substack"
+  "facebook", "instagram", "twitter", "tiktok", "snapchat", "linkedin", 
+  "youtube", "reddit", "pinterest", "tumblr", "discord", "twitch", 
+  "bluesky", "threads", "wechat", "qq", "qzone", "line", "kakaotalk", 
+  "viber", "telegram", "signal", "whatsapp", "messenger", "weibo", 
+  "douyin", "vk", "odnoklassniki", "mixi", "baidu tieba", "nextdoor", 
+  "truth social", "yubo", "vimeo", "flickr", "deviantart", "soundcloud", 
+  "bandcamp", "last.fm", "mixcloud", "amino", "couchsurfing", "meetup", 
+  "substack"
 ]
 
 export const toBe = [
-  "successful",
-  "productive",
-  "good at something",
-  "cool","rich",
-  "a billionare",
-  "a millionare", "less sad",
-  "a trillionare", "joyful",
-  "rich guy", "a person with great childhood",
-  "motivated", "a kid",
-  "sigma", "a kid again",
-  "touching grass",
-  "touch grass", "happy"
+  "successful", "productive", "good at something", "cool", "rich", "a billionare", "a millionare", "less depressive",
+  "joyful", "rich guy", "a person with great childhood", "motivated", "sigma", "touching grass", "touch grass", "happy"
 ]
 
 export const games: string[] = [

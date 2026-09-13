@@ -4,7 +4,7 @@ import { log } from "shared/log"
 export const TaskResponse = {
   Done: 0,
   Confirm: 1,
-  UnknownError: 2,
+  UnknownError: 2, 
   GenerationFailure: 3,
   ParseFailure: 4,
   Disabled: 5,
@@ -13,7 +13,7 @@ export const TaskResponse = {
   PartialFailure: 9
 } as const
 
-const MappedResponse = ["Done", "Confirm", "UnknownError", "GenFailure", "ParseFailure", "Disabled", "InvalidInfo", "BrowserError", "PartialFailure"]
+const MappedResponse = Object.keys(TaskResponse)
 
 export const TaskRegistrationStatus = {
   Unknown: 0,
@@ -35,43 +35,39 @@ export const Register = async (task: TaskRegistration) => {
     task.handler = async () => pcall(handler)
     log.task("Registering task:", task.name)
 
-    await chrome.alarms.create(task.name, { periodInMinutes: task.interval })
+    await alarm.create(task.name, { periodInMinutes: task.interval })
     RegisteredTasks.set(task.name, task)
 
     return TaskRegistrationStatus.Success
 }
 
+const Error = (Task: TaskRegistration, e: any) => {
+    log.task(`Trigger handle "${Task.name}" failed`)
+    log.error(`Immediate fix needed for "${Task.name}": `, e)
+}
+
 export const Listen = () => {
     for (const Task of RegisteredTasks.values()) {
-        log.task("Triggering handler of ", Task.name)
-        try {
-            void Task.handler()
-        }
-        catch (e) {
-            log.task("Failed to trigger handler of task \"" + Task.name + "\". Error:", e)
-            console.error("Critical error, immediate fix needed:" ,e, "\nFrom ", `"${Task.name}"`)
-        }
+        log.task("Triggered handler of ", Task.name)
+        try { void Task.handler() }
+        catch (e) { Error(Task, e) }
     }
 
-    chrome.alarms.onAlarm.addListener(async PendingTask => {
+    alarm.onAlarm.addListener(async PendingTask => {
+        const Task = RegisteredTasks.get(PendingTask.name)
+        if (!Task) return
+
         try {
-            const Task = RegisteredTasks.get(PendingTask.name)
-
-            if (Task) {
-                if (Task.done) {
-                    RegisteredTasks.delete(Task.name)
-                    await chrome.alarms.clear(Task.name)
-                    return
-                }
-
-                const Result: TaskResponse = await Task.handler()
-                log.task(`Task "${Task.name}" exitted with result id: ${MappedResponse[Result]}`)
+           if (Task.done) {
+                RegisteredTasks.delete(Task.name)
+                await alarm.clear(Task.name)
+                return
             }
+
+            const Result: TaskResponse = await Task.handler()
+            log.task(`Task "${Task.name}": ${MappedResponse[Result]}`)
         }
-        catch (e) {
-            log.task("Failed to trigger handler of task \"" + PendingTask.name + "\". Error:", e)
-            console.error("Critical error, immediate fix needed:" ,e, "\nFrom ", `"${PendingTask.name}"`)
-        }
+        catch (e) { Error(Task, e) }
     })
 
     setInterval(() => {}, 15000)

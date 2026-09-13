@@ -1,23 +1,20 @@
-import { Storage, StorageKeys } from "shared/storage.ts"
+import { Storage, StorageKeys } from "shared/storage"
 import { TaskResponse } from "@/internal/task"
 import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/parser"
-import { log } from "shared/log.ts"
+import { log } from "shared/log"
 
 const resolution = [ 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600 ]
+const r = () => resolution[math.floor(math.random() * resolution.length)]
 
 const report_visual_search = async (query: string, bcid: string, form: string, fetch_prom: Response) => {
-    log.searches(`Reporting visual search (bcid: ${bcid}) to endpoint`)
-    
-    const text = await fetch_prom.text()
-    const components = ParseSearchComponent(text)
-    const IG =  components.IG
-    const IID = components.IID
+    log.searches(`Reporting visual search`)
+
+    const {IG, IID} = ParseSearchComponent(await fetch_prom.text())
 
     const url = Bing + "/rewardsapp/reportActivity"
-    const params = new URLSearchParams({ IG, IID, q: query, FORM: form, bcid })
-    const body = new URLSearchParams({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}`, V: "web" })
+    const body = new params({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}`, V: "web" })
 
-    return await fetch(`${url}?${params}`, {
+    return await curl(`${url}?${ new params({ IG, IID, q: query, FORM: form, bcid }) }`, {
         method: "POST", body, credentials: "include",
         headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "*/*" }
     })
@@ -26,22 +23,18 @@ const report_visual_search = async (query: string, bcid: string, form: string, f
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.VisualSearchCompletion)
     if (completed === true) return TaskResponse.Confirm
+    
+    const [w,h] = [r(),r()]
+    const [ws,hs] = [String(w),String(h)]
 
-    const width = resolution[Math.floor(Math.random() * resolution.length)]
-    const height = resolution[Math.floor(Math.random() * resolution.length)]
-
-    const random_image = await fetch(`https://picsum.photos/${width}/${height}`)
+    const random_image = await curl(`https://picsum.photos/${w}/${h}`)
     const blob = await random_image.blob()
 
     const imageBin = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
 
         reader.onloadend = () => {
-            if (typeof reader.result !== "string") {
-                reject(new Error("Failed to convert image to Base64"))
-                return
-            }
-
+            if (typeof reader.result !== "string") return reject(new Error("Failed to convert image to Base64"))
             resolve(reader.result.split(",")[1])
         }
 
@@ -49,25 +42,22 @@ export default async (): Promise<TaskResponse> => {
         reader.readAsDataURL(blob)
     })
 
-    const fetch_params = new URLSearchParams({
+    const fetch_params = new params({
         iss: "sbiupload", FORM: "SBIWEB", sbisrc: "ImgPicker",
-        sbifsz: `${width}+x+${height}+·+${Math.round(blob.size / 1024 * 100) / 100}+kB+·+${blob.type.split("/")[1]}`,
-        sbifnm: "untitled.jpg",
-        thw: String(width),
-        thh: String(height),
         ptime: "101",
-        dlen: String(blob.size),
-        expw: String(width),
-        exph: String(height),
+        sbifsz: `${w}+x+${h}+·+${math.round(blob.size/1024*100)/100}+kB+·+${blob.type.split("/")[1]}`,
+        sbifnm: "untitled.jpg",
+        thw: ws, thh: hs, dlen: String(blob.size),
+        expw: ws, exph: hs,
     })
 
-    const form = new FormData()
-    form.append("cbir", "sbi")
-    form.append("imageBin", imageBin)
+    const body = new FormData()
+    body.append("cbir", "sbi")
+    body.append("imageBin", imageBin)
 
-    const response = await fetch(
+    const response = await curl(
         `${Bing}/images/kblob?${fetch_params.toString()}`,
-        { method: "POST", body: form, credentials: "include" }
+        { method: "POST", body, credentials: "include" }
     )
 
     const data = await response.json()
@@ -76,13 +66,10 @@ export default async (): Promise<TaskResponse> => {
     
     if (!redirectUrl) return TaskResponse.ParseFailure
 
-    const params = Object.fromEntries(url.searchParams)
+    const paramz = Object.fromEntries(url.searchParams)
     const fetchUrl = Bing + redirectUrl
-    
-    const report = await report_visual_search(params.q, params.bcid, fetch_params.get("FORM") || "SBIWEB", await fetch(fetchUrl))
-    const parsed_state = ParseReport(await report.text())
+    const parsed_state = ParseReport(await (await report_visual_search(paramz.q, paramz.bcid, fetch_params.get("FORM") || "SBIWEB", await curl(fetchUrl))).text())
 
     if (parsed_state.RewardsSessionData.GiveBalance > 0) return TaskResponse.Confirm
-
     return TaskResponse.Done
 }

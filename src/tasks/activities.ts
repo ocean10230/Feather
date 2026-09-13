@@ -1,6 +1,6 @@
 import { sleep } from "@/internal/util"
-import { log } from "shared/log.ts"
-import { Storage, StorageKeys } from "shared/storage.ts"
+import { log } from "shared/log"
+import { Storage, StorageKeys } from "shared/storage"
 import { ActivitiesValidator, CompleteActivity } from "@/rewards/component"
 import { TaskResponse } from "@/internal/task"
 import { FetchPage, RSC } from "@/rewards/parser"
@@ -14,22 +14,18 @@ export default async (): Promise<TaskResponse> => {
     const pageData = await FetchPage()
     if (!pageData) return TaskResponse.ParseFailure
 
-    log.activities("Parsing activities list from HTML")
+    log.activities("Parsing activities")
+    const activities = ActivitiesValidator( (await RSC(pageData, "MoreActivities")) .children.at(-1).activityCards )
 
-    const parsed_rsc = await RSC(pageData, "MoreActivities")
-    const parsed = parsed_rsc.children.at(-1).activityCards
-    const activities = ActivitiesValidator(parsed)
-
-    log.activities("Validating activities list")
-    
+    log.activities("Validating array")
     if (!activities) return TaskResponse.InvalidInformation
     if (activities.length < 1) return TaskResponse.Confirm
 
-    log.activities("Faking activities completion")
+    log.activities("Faking completions")
     
     for (const quest of activities) {
         await CompleteActivity(quest)
-        await sleep(500 + (Math.random() * 500))
+        await sleep(500 + (math.random() * 500))
     }
 
     return TaskResponse.Done
