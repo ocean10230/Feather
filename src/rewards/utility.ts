@@ -179,7 +179,7 @@ export const InitializeSpoofing = async () => {
     await CleanUp()
     const type = "modifyHeaders"
 
-    const rules: ModifyHeaderDNR[] = [
+    const rules: ModifyHeader[] = [
         {
             action: {
                 type, requestHeaders: [ MaskHeader("Origin", Main) ]
