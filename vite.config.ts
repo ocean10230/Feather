@@ -12,7 +12,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '#': resolve(__dirname, 'frontend/src'),
       'shared': resolve(__dirname, "shared")
     },
   },
@@ -21,7 +20,6 @@ export default defineConfig({
     minify: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
         background: resolve(__dirname, 'src/background'),
       },
       output: {
