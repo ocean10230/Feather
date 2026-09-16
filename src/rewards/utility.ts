@@ -182,7 +182,13 @@ export const InitializeSpoofing = async () => {
     const rules: ModifyHeader[] = [
         {
             action: {
-                type, requestHeaders: [ MaskHeader("Origin", Main) ]
+                type, requestHeaders: [
+                    MaskHeader("Origin", Main),
+                    MaskHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0"),
+                    MaskHeader("sec-ch-ua", `"Microsoft Edge";v="152", "Not?A_Brand";v="24", "Chromium";v="152", "Microsoft Edge WebView2";v="152"`),
+                    MaskHeader("X-Rewards-Source", "msrewards-desktop"),
+                    MaskHeader("Sec-MS-Gec", "B8FB8F416349ECA6-B752E34B63773274BC21FE082123570B99A954F0C4025E0C802FE210E177D65B")
+                ]
             },
             condition: {
                 regexFilter: "^https://(www\\.)?rewards\\.bing\\.com/",
@@ -200,6 +206,8 @@ export const InitializeSpoofing = async () => {
             }
         }
     ]
+
+//    
 
     await declare.updateDynamicRules({
         removeRuleIds: Array.from({ length: rules.length }).map((_,i) => i),
