@@ -56,7 +56,9 @@ export const ParseSearchComponent = (data: string) => ({ IG: data.match(/_IG="([
 
 export const ParseReport = (response: string): ReportStatus => {
   try {
-    return json.parse(response.split("ReportActivity(")[1].split(")")[0])
+    const data = json.parse(response.split("ReportActivity(")[1].split(")")[0]) as ReportStatus
+    data.RewardsSessionData.GiveBalance = data.RewardsSessionData.RewardsBalance - data.RewardsSessionData.PreviousBalance
+    return data
   } catch (e) {
     log.searches("Failed to parse report from server. Error:", e)
     return { Failed: true } as ReportStatus

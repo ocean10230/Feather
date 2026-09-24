@@ -1,10 +1,18 @@
 import { sleep } from "@/internal/util"
-import { GetSearches} from "@/rewards/utility"
 import { FetchPage, RSC, ParseSearchComponent, ParseReport, Bing } from "@/rewards/parser"
 import { TaskResponse } from "@/internal/task"
 import { log } from "shared/log"
+import { socialMedias } from "@/rewards/search"
 
-let cached: string[] = []
+const GetBatchQueries = async (): Promise<string[]> => {
+  try {
+    const res = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=30&format=json&origin=*")
+    const data = await res.json()
+    return Object.values(data.query.pages).map((p: any) => p.title.toLowerCase())
+  } catch {
+    return socialMedias
+  }
+}
 
 const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
   log.searches(`Reporting search "${q}"`)
@@ -31,8 +39,6 @@ const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
 
 const IsCompleted = (counter?: SearchInfo) => Boolean(counter && counter.progress >= counter.max)
 
-// --- CORE SEARCH LOOP ---
-
 const ExecutePhase = async (
   counter: SearchInfo
 ): Promise<boolean> => {
@@ -40,13 +46,10 @@ const ExecutePhase = async (
     log.searches("Search completed")
     return true
   }
-
-  if (cached.length < 1) cached = GetSearches()
-  if (!cached || cached.length === 0) return false
   
   let searchesDone = counter.progress ?? 0
   const maxSearches = counter.max ?? 60
-  const queries = cached.sort(() => 0.5 - math.random()).slice(0, 120)
+  const queries = await GetBatchQueries()
 
   log.searches(`Progress: ${searchesDone}/${maxSearches}`)
 
