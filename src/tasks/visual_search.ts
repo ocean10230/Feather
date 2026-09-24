@@ -8,9 +8,8 @@ const r = () => resolution[math.floor(math.random() * resolution.length)]
 
 const report_visual_search = async (query: string, bcid: string, form: string, fetch_prom: Response) => {
     log.searches(`Reporting visual search`)
-
+    
     const {IG, IID} = ParseSearchComponent(await fetch_prom.text())
-
     const url = Bing + "/rewardsapp/reportActivity"
     const body = new params({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}`, V: "web" })
 

@@ -1,97 +1,110 @@
 import { sleep } from "@/internal/util"
-import { FetchPage, RSC, ParseSearchComponent, ParseReport, Bing } from "@/rewards/parser"
+import { FetchPage, RSC, ParseSearchComponent, Bing } from "@/rewards/parser"
 import { TaskResponse } from "@/internal/task"
 import { log } from "shared/log"
 import { socialMedias } from "@/rewards/search"
 
-const GetBatchQueries = async (): Promise<string[]> => {
+const GetBatchQuery = async (): Promise<string> => {
   try {
-    const res = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=30&format=json&origin=*")
+    const res = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=1&format=json&origin=*")
     const data = await res.json()
-    return Object.values(data.query.pages).map((p: any) => p.title.toLowerCase())
+    const pages = Object.values(data.query.pages)
+    return (pages[0] as any)?.title || socialMedias[0]
   } catch {
-    return socialMedias
+    return socialMedias[Math.floor(Math.random() * socialMedias.length)]
   }
 }
 
-const reportSearch = async (q: string, fetch_prom: Promise<Response>) => {
-  log.searches(`Reporting search "${q}"`)
+let cached_cvid = ""
 
-  const text = await (await fetch_prom).text()
-  const components = ParseSearchComponent(text)
-  const {IG, IID} = components
+const reportSearch = async (q: string) => {
+    log.searches(`Reporting search "${q}"`)
+    const SID = await chrome.cookies.get({
+        name: "_SS",
+        url: "https://www.bing.com"
+    })
 
-  const queryParams = new URLSearchParams({
-    IG, IID, q, pq: q, form: "QBLH",
-    cvid: "ED96545512E0492DAE488BD5B3118DFA"
-  })
+    const searchRes = await curl(`${Bing}/search?q=${encodeURIComponent(q)}&cvid=${cached_cvid}&SID=${SID}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+        }
+    })
 
-  const fullSearchUrl = `${Bing}/search?${queryParams.toString()}`
+    const text = await searchRes.text()
+    const { IG, IID, cvid } = ParseSearchComponent(text)
+    cached_cvid = cvid
 
-  return await curl(`${Bing}/rewardsapp/reportActivity?${queryParams.toString()}`, {
-    method: "POST", mode: "cors",
-    credentials: "include",
-    headers: { accept: "*/*", ect: "4g", priority: "u=1, i", "content-type": "application/x-www-form-urlencoded", },
-    referrer: fullSearchUrl,
-    body: new URLSearchParams({ url: fullSearchUrl, V: "web" }).toString(),
-  })
-}
-
-const IsCompleted = (counter?: SearchInfo) => Boolean(counter && counter.progress >= counter.max)
-
-const ExecutePhase = async (
-  counter: SearchInfo
-): Promise<boolean> => {
-  if (IsCompleted(counter)) {
-    log.searches("Search completed")
-    return true
-  }
-  
-  let searchesDone = counter.progress ?? 0
-  const maxSearches = counter.max ?? 60
-  const queries = await GetBatchQueries()
-
-  log.searches(`Progress: ${searchesDone}/${maxSearches}`)
-
-  for (const query of queries) {
-    if (searchesDone >= maxSearches) break
-
-    try {
-      const parsed = ParseReport(await (await reportSearch(
-        query,
-        curl(`${Bing}/search?q=${encodeURIComponent(query)}`)
-      )).text())
-
-      if (!parsed.Failed && parsed.RewardsSessionData) searchesDone = parsed.RewardsSessionData.DailySearchPointsEarned ?? searchesDone + (parsed.RewardsIncrement || 3)
-      else searchesDone += 3
-    } catch (e) {
-      log.searches(`Failed to search "${query}":`, e)
+    if (!IG || !IID) {
+        log.searches(`Warning: Failed to parse search components for "${q}".`)
+        return null
     }
 
-    await sleep(9000 + math.random() * 3500)
-  }
+    fetch(`https://vcf.bing.com/bd/verify?IID=BdVerify&SFX=1&IG=${IG}`, {
+        headers: { "accept": "*/*", "priority": "u=1, i" },
+        referrer: "https://www.bing.com/",
+        method: "GET",
+        mode: "cors",
+        credentials: "omit"
+    })
 
-  log.searches(`Finished: ${searchesDone}/${maxSearches}`)
-  return searchesDone >= maxSearches
+    const queryParams = new URLSearchParams({
+        IG, IID, q, form: "QBRE",
+        sp: "-1", lq: "0", pq: q[0] || "y", 
+        sc: "12-" + q.length, qs: "n", sk: "",
+        cvid: cvid || "", 
+        ajaxreq: "1"
+    })
+
+    const fullSearchUrl = `${Bing}/search?${queryParams.toString()}`
+
+    return await curl(`${Bing}/rewardsapp/reportActivity?${queryParams.toString()}`, {
+        method: "POST", 
+        mode: "cors",
+        credentials: "include",
+        headers: { 
+            accept: "*/*", 
+            ect: "4g", 
+            priority: "u=1, i", 
+            "content-type": "application/x-www-form-urlencoded" 
+        },
+        referrer: fullSearchUrl,
+        body: new URLSearchParams({ url: fullSearchUrl, V: "web" }).toString(),
+    })
+}
+
+const ExecutePhase = async (): Promise<boolean> => {
+    // Re-fetch dashboard state on every recursive hop to get real-time point counters
+    const pageDat = await FetchPage()
+    const parsedData = await RSC(pageDat, `\"type\":\"pointbreakdown\"`)
+    const counter = parsedData?.model?.pointsCounters?.pc
+
+    if (!counter || counter.progress >= counter.max) {
+        log.searches("Search completed or counter unavailable")
+        return true
+    }
+
+    log.searches(`Progress: ${counter.progress}/${counter.max}`)
+
+    const query = await GetBatchQuery()
+    try {
+        await reportSearch(query)
+    } catch (e) {
+        log.searches(`Failed to search "${query}":`, e)
+    }
+
+    await sleep(9000 + Math.random() * 3500)
+    return await ExecutePhase()
 }
 
 // --- ENTRY POINT ---
 export default async (): Promise<TaskResponse> => {
-  try {
-    const pageDat = await FetchPage()
-    const parsedData = await RSC(pageDat, `\"type\":\"pointbreakdown\"`)
-
-    if (!parsedData?.model?.pointsCounters) {
-      log.searches("Could not parse points")
-      return TaskResponse.UnknownError
+    try {
+        await ExecutePhase()
+        return TaskResponse.Done
+    } catch (e) {
+        return TaskResponse.UnknownError
     }
-
-    const { pc } = parsedData.model.pointsCounters
-    if (!IsCompleted(pc)) await ExecutePhase(pc)
-
-    return TaskResponse.Done
-  } catch (e) {
-    log.error("Failed searching:", e)
-    return TaskResponse.UnknownError
-  }
 }

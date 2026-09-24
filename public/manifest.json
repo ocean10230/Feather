@@ -23,7 +23,7 @@
   ],
   "permissions": [
     "storage",
-    "alarms",
+    "alarms", "cookies",
     "declarativeNetRequest"
   ],
   "host_permissions": [

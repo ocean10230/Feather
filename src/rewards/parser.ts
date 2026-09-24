@@ -52,7 +52,11 @@ export const FetchPage = async (page: string = Main + "/earn"): Promise<NextFlig
   return Cached[page]
 }
 
-export const ParseSearchComponent = (data: string) => ({ IG: data.match(/_IG="([^"]+)"/i)?.[1] ?? randomHex(32), IID: data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${math.floor(math.random() * 10000)}` })
+export const ParseSearchComponent = (data: string) => ({
+  IG: data.match(/_IG="([^"]+)"/i)?.[1] ?? randomHex(32),
+  IID: data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${math.floor(math.random() * 10000)}`,
+  cvid: data.match(/_cid="([^"]+)"/i)?.[1] ?? randomHex(32),
+})
 
 export const ParseReport = (response: string): ReportStatus => {
   try {

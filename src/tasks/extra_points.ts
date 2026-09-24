@@ -21,7 +21,7 @@ const GetActionID = async (dpl: string): Promise<string> => {
 
         if (c.includes("reportClaim")) {
             const a = c.match(/createServerReference\)\(["']([^"']+)["']/)?.[1]
-            if (a) return Storage.set(StorageKeys.ClaimPointsNextActionId, a + "_" + dpl), a
+            if (a) return Storage.set(StorageKeys.ClaimPointsNextActionId, a), a
         }
 
         const patterns = [/<script\b[^>]*\bsrc=["']([^"']+)["']/gi, /\b(?:import|require)\s*\(\s*["']([^"']+)["']\s*\)/gi, /["'](static\/[^"']+\.js(?:\?[^"']*)?)["']/gi]
@@ -34,6 +34,7 @@ const GetActionID = async (dpl: string): Promise<string> => {
             }
         }
     }
+    
     return "not_found"
 }
 

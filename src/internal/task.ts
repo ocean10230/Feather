@@ -13,8 +13,6 @@ export const TaskResponse = {
   PartialFailure: 9
 } as const
 
-const MappedResponse = Object.keys(TaskResponse)
-
 export const TaskRegistrationStatus = {
   Unknown: 0,
   Success: 1,
@@ -22,6 +20,9 @@ export const TaskRegistrationStatus = {
   Taken: 3,
   AlreadyDone: 4,
 } as const
+
+
+const MappedResponse = Object.keys(TaskResponse)
 
 export type TaskRegistrationStatus = typeof TaskRegistrationStatus[keyof typeof TaskRegistrationStatus];
 export type TaskResponse = (typeof TaskResponse)[keyof typeof TaskResponse]
@@ -33,7 +34,7 @@ export const Register = async (task: TaskRegistration) => {
     const handler = task.handler
 
     task.handler = async () => pcall(handler)
-    log.task("Registering task:", task.name)
+    log.task("Adding", task.name)
 
     await alarm.create(task.name, { periodInMinutes: task.interval })
     RegisteredTasks.set(task.name, task)
@@ -42,13 +43,13 @@ export const Register = async (task: TaskRegistration) => {
 }
 
 const Error = (Task: TaskRegistration, e: any) => {
-    log.task(`Trigger handle "${Task.name}" failed`)
-    log.error(`Immediate fix needed for "${Task.name}": `, e)
+    log.task(`ERR: "${Task.name}"`)
+    log.error(`Fix needed for "${Task.name}": `, e)
 }
 
 export const Listen = () => {
     for (const Task of RegisteredTasks.values()) {
-        log.task("Triggered handler of ", Task.name)
+        log.task("Runnning", Task.name)
         try { void Task.handler() }
         catch (e) { Error(Task, e) }
     }

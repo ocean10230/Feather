@@ -8,7 +8,3 @@ declare type TaskRegistration = {
 
 enum TaskRegistrationStatus { Unknown, Success, Failed, Taken, AlreadyDone }
 enum TaskRemovalStatus { Unknown, Success, Failed, NotFound }
-// 1. Augment the global scope
-declare global {
-  var c = chrome
-}

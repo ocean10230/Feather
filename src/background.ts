@@ -1,4 +1,4 @@
-import { Alarms, InitializeSpoofing } from "@/rewards/utility"
+import { InitializeSpoofing } from "@/rewards/utility"
 import { Storage, StorageKeys } from "shared/storage"
 import { Listen, Register } from "@/internal/task"
 import { RefreshSession } from "@/rewards/component"
@@ -19,12 +19,7 @@ params = URLSearchParams
 json = JSON
 math = Math
 
-let ExtensionStarted = false
-
 const Initialize = async () => {
-  if (ExtensionStarted) return
-  ExtensionStarted = true
-
   const storedDay = await Storage.get(StorageKeys.Today)
   const currentDay = new Date().getDay()
 
@@ -41,11 +36,11 @@ const Initialize = async () => {
 
   await Promise.all([
     Register({ name: "SessionRefresh", interval: 30, handler: RefreshSession }),
-    Register({ name: Alarms.Activties, interval: 2, handler: activities }),
-    Register({ name: Alarms.PCSearch, interval: 7, handler: pc_search }),
-    Register({ name: Alarms.ClaimPoints, interval: 10, handler: extra_points }),
-    Register({ name: Alarms.DailySet, interval: 25, handler: daily_set }),
-    Register({ name: Alarms.VisualSearch, interval: 60, handler: visual_search })
+    Register({ name: "Activities", interval: 2, handler: activities }),
+    Register({ name: "Searches", interval: 7, handler: pc_search }),
+    Register({ name: "ClaimPoints", interval: 10, handler: extra_points }),
+    Register({ name: "DailySet", interval: 25, handler: daily_set }),
+    Register({ name: "VisualSearch", interval: 60, handler: visual_search })
   ])
 
   Listen()

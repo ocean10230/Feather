@@ -4,7 +4,6 @@ import { sleep } from "@/internal/util"
 import { Storage, StorageKeys } from "shared/storage"
 import { Dashboard, RouterTree } from "@/rewards/parser"
 
-
 export const RefreshSession = async () => {
     if (Date.now() <= (await Storage.get(StorageKeys.SessionValidateUntil) as number ?? 0)) return
     log.initialize("Initializing session")

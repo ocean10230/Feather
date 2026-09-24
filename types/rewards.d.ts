@@ -1,4 +1,3 @@
-declare type NextFlightData = `${string}:${string}`
 declare type QuestDateFormat = `${string}/${string}/${string}`
 
 declare type QuestData = {

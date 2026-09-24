@@ -16,8 +16,6 @@ export default async (): Promise<TaskResponse> => {
 
     log.activities("Parsing activities")
     const activities = ActivitiesValidator( (await RSC(pageData, "MoreActivities")) .children.at(-1).activityCards )
-
-    log.activities("Validating array")
     if (!activities) return TaskResponse.InvalidInformation
     if (activities.length < 1) return TaskResponse.Confirm
 
