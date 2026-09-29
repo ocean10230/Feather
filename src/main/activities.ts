@@ -22,7 +22,7 @@ export default async (): Promise<TaskResponse> => {
     
     for (const quest of activities) {
         await CompleteActivity(quest)
-        await sleep(500 + (math.random() * 500))
+        await sleep(500 + (Math.random() * 500))
     }
 
     return TaskResponse.Done

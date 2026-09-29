@@ -15,9 +15,6 @@ tabs = api.tabs
 alarm = api.alarms
 declare = api.declarativeNetRequest
 curl = fetch
-params = URLSearchParams
-json = JSON
-math = Math
 
 const Initialize = async () => {
   const storedDay = await Storage.get(StorageKeys.Today)

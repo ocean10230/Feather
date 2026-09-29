@@ -1,4 +1,3 @@
-import { pcall } from "@/helpers/utility";
 import { log } from "@/helpers/debugging"
 
 export const TaskResponse = {
@@ -33,7 +32,15 @@ export const Register = async (task: TaskRegistration) => {
     if (RegisteredTasks.has(task.name)) return TaskRegistrationStatus.Taken
     const handler = task.handler
 
-    task.handler = async () => pcall(handler)
+    task.handler = async () => {
+        try {
+            handler()
+            return true
+        }
+        catch {
+            return false
+        }
+    }
     log.task("Adding", task.name)
 
     await alarm.create(task.name, { periodInMinutes: task.interval })
