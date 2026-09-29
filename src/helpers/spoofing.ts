@@ -1,38 +1,5 @@
-import { Bing, Main } from "@/rewards/parser"
-import { Storage, StorageKeys } from "shared/storage"
-
-export const pcall = async <T>(func: () => Promise<T> | T): Promise<[T | any, boolean]> => {
-  try {
-    const result = await func()
-    return [result, true]
-  } catch (e) {
-    return [e, false]
-  }
-}
-
-export const ScriptList = (html: string): NextFlightData => {
-  const scriptList: string[] = []
-  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
-  let scriptMatch: RegExpExecArray | null
-
-  while ((scriptMatch = scriptRegex.exec(html)) !== null) {
-    const scriptContent = scriptMatch[1]
-
-    if (scriptContent.includes("__next_f")) {
-      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s)?.[1]
-      if (!match) continue
-
-      try {
-        const parsed = json.parse(match).at(-1)
-        parsed && scriptList.push(parsed)
-      } catch { continue }
-    }
-  }
-
-  return scriptList.join("\n") as NextFlightData
-}
-
-export const date=(d=new Date): QuestDateFormat=>`${(d.getMonth()+1+'').padStart(2,'0')}/${(d.getDate()+'').padStart(2,'0')}/${d.getFullYear()}`
+import { Bing, Main } from "./parser"
+import { Storage, StorageKeys } from "./storage"
 
 export const CleanUp = async () => {
     const rules = await declare.getDynamicRules()
@@ -90,5 +57,8 @@ export const InitializeSpoofing = async () => {
         }))
     })
 
-    await Storage.set(StorageKeys.DeploymentId, (await (await curl(Main + "/dashboard")).text()).split("?dpl=")[1].split("\"")[0])
+    const promise = await curl(Main + "/dashboard")
+    const text = await promise.text()
+    const dpl = text.match(/\?dpl=([^"]+)/)?.[1]
+    await Storage.set(StorageKeys.DeploymentId, dpl || "")
 }

@@ -1,13 +1,13 @@
-import { InitializeSpoofing } from "@/rewards/utility"
-import { Storage, StorageKeys } from "shared/storage"
-import { Listen, Register } from "@/internal/task"
-import { RefreshSession } from "@/rewards/component"
+import { InitializeSpoofing } from "@/helpers/spoofing"
+import { Storage, StorageKeys } from "@/helpers/storage"
+import { Listen, Register } from "@/task"
+import { RefreshSession } from "@/helpers/rewards"
 
-import pc_search from "@/tasks/searches"
-import extra_points from "@/tasks/extra_points"
-import activities from "@/tasks/activities"
-import daily_set from "@/tasks/daily_set"
-import visual_search from "@/tasks/visual_search"
+import Searches from "@/main/searches"
+import AutoClaim from "@/main/extra_points"
+import Activities from "@/main/activities"
+import DailySet from "@/main/daily_set"
+import VisualSearch from "@/main/visual_search"
 
 api = chrome
 runtime = api.runtime
@@ -30,17 +30,16 @@ const Initialize = async () => {
     Storage.set(StorageKeys.SearchCompletion, false),
     Storage.set(StorageKeys.VisualSearchCompletion, false)
   ])
-  
 
   await InitializeSpoofing()
 
   await Promise.all([
     Register({ name: "SessionRefresh", interval: 30, handler: RefreshSession }),
-    Register({ name: "Activities", interval: 2, handler: activities }),
-    Register({ name: "Searches", interval: 7, handler: pc_search }),
-    Register({ name: "ClaimPoints", interval: 10, handler: extra_points }),
-    Register({ name: "DailySet", interval: 25, handler: daily_set }),
-    Register({ name: "VisualSearch", interval: 60, handler: visual_search })
+    Register({ name: "Activities", interval: 2, handler: Activities }),
+    Register({ name: "Searches", interval: 7, handler: Searches }),
+    Register({ name: "ClaimPoints", interval: 10, handler: AutoClaim }),
+    Register({ name: "DailySet", interval: 25, handler: DailySet }),
+    Register({ name: "VisualSearch", interval: 60, handler: VisualSearch })
   ])
 
   Listen()

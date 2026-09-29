@@ -1,11 +1,33 @@
-import { pcall, ScriptList } from "./utility"
-import { randomHex } from "@/internal/util"
-import { log } from "shared/log"
+import { pcall } from "@/helpers/utility"
+import { randomHex } from "@/utility/util"
+import { log } from "@/helpers/debugging"
 
 export const Bing = "https://www.bing.com"
 export const Main = "https://rewards.bing.com"
 export const Dashboard = "https://rewards.bing.com/dashboard"
 export const RouterTree = encodeURIComponent(`["",{"children":["(nav)",{"children":["dashboard",{"children":["__PAGE__",{},null,null,4096]},null,null,4096]},null,null,4096]},null,null,4112]`)
+
+export const ScriptList = (html: string): NextFlightData => {
+  const scriptList: string[] = []
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
+  let scriptMatch: RegExpExecArray | null
+
+  while ((scriptMatch = scriptRegex.exec(html)) !== null) {
+    const scriptContent = scriptMatch[1]
+
+    if (scriptContent.includes("__next_f")) {
+      const match = scriptContent.match(/self\.__next_f\.push\((\[.*?\])\)/s)?.[1]
+      if (!match) continue
+
+      try {
+        const parsed = JSON.parse(match).at(-1)
+        parsed && scriptList.push(parsed)
+      } catch { continue }
+    }
+  }
+
+  return scriptList.join("\n") as NextFlightData
+}
 
 export const RSC = async (
   data: string,
@@ -25,7 +47,7 @@ export const RSC = async (
       if (!match) return null
 
       try {
-        const parsed = json.parse(match.replace(/"\$undefined"/g, "null"))
+        const parsed = JSON.parse(match.replace(/"\$undefined"/g, "null"))
         return parsed?.[3] ?? null
       } catch (e) {
         (e instanceof SyntaxError) ? console.warn("Got syntax error:", e, match) : console.warn("Unknown parse failure:", e)
@@ -44,23 +66,19 @@ export const RSC = async (
   return multiple ? [] : null
 }
 
-const Cached: Record<string, any> = {}
-
-export const FetchPage = async (page: string = Main + "/earn"): Promise<NextFlightData> => {
-  if (Cached[page]) return Cached[page]
-  else Cached[page] = ScriptList( await (await curl(page)).text() )
-  return Cached[page]
-}
+export const FetchPage = async (page: string = Main + "/earn"): Promise<NextFlightData> => ScriptList( await (await curl(page)).text() )
 
 export const ParseSearchComponent = (data: string) => ({
   IG: data.match(/_IG="([^"]+)"/i)?.[1] ?? randomHex(32),
-  IID: data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${math.floor(math.random() * 10000)}`,
+  IID: data.match(/_iid="([^"]+)"/i)?.[1] || `SERP.${Math.floor(Math.random() * 10000)}`,
   cvid: data.match(/_cid="([^"]+)"/i)?.[1] ?? randomHex(32),
 })
 
 export const ParseReport = (response: string): ReportStatus => {
   try {
-    const data = json.parse(response.split("ReportActivity(")[1].split(")")[0]) as ReportStatus
+    // response.split("ReportActivity(")[1].split(")")[0]
+    const match = response.match(/ReportActivity\((.*?)\)/)
+    const data = JSON.parse(match ? match[1] : "{}") as ReportStatus
     data.RewardsSessionData.GiveBalance = data.RewardsSessionData.RewardsBalance - data.RewardsSessionData.PreviousBalance
     return data
   } catch (e) {

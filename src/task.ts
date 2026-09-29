@@ -1,5 +1,5 @@
-import { pcall } from "@/rewards/utility";
-import { log } from "shared/log"
+import { pcall } from "@/helpers/utility";
+import { log } from "@/helpers/debugging"
 
 export const TaskResponse = {
   Done: 0,

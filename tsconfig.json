@@ -20,9 +20,8 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
-      "#/*": ["./frontend/src/*"],
-      "shared/*": ["./shared/*"]
+      "#/*": ["./frontend/src/*"]
     }
   },
-  "include": ["src", "types", "shared/storage.ts"]
+  "include": ["src", "types"]
 }

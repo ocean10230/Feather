@@ -1,20 +1,19 @@
-import { sleep } from "@/internal/util"
-import { log } from "shared/log"
-import { Storage, StorageKeys } from "shared/storage"
-import { ActivitiesValidator, CompleteActivity } from "@/rewards/component"
-import { TaskResponse } from "@/internal/task"
-import { FetchPage, RSC } from "@/rewards/parser"
+import { sleep } from "@/utility/util"
+import { log } from "@/helpers/debugging"
+import { Storage, StorageKeys } from "@/helpers/storage"
+import { ActivitiesValidator, CompleteActivity } from "@/helpers/rewards"
+import { TaskResponse } from "@/task"
+import { FetchPage, RSC } from "@/helpers/parser"
 
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.ActivitiesCompletion)
     if (completed == true) return TaskResponse.Confirm
 
-    log.activities("Getting activities")
+    log.activities("Parsing activities")
 
     const pageData = await FetchPage()
     if (!pageData) return TaskResponse.ParseFailure
-
-    log.activities("Parsing activities")
+    
     const activities = ActivitiesValidator( (await RSC(pageData, "MoreActivities")) .children.at(-1).activityCards )
     if (!activities) return TaskResponse.InvalidInformation
     if (activities.length < 1) return TaskResponse.Confirm

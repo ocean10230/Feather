@@ -1,8 +1,7 @@
-import { ScriptList } from "@/rewards/utility"
-import { Dashboard, RSC } from "@/rewards/parser"
-import { TaskResponse } from "@/internal/task"
-import { log } from "shared/log"
-import { Storage, StorageKeys } from "shared/storage"
+import { Dashboard, RSC, ScriptList } from "@/helpers/parser"
+import { TaskResponse } from "@/task"
+import { log } from "@/helpers/debugging"
+import { Storage, StorageKeys } from "@/helpers/storage"
 
 const GetActionID = async (dpl: string): Promise<string> => {
     const cached = await Storage.get(StorageKeys.ClaimPointsNextActionId) as string

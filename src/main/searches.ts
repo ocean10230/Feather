@@ -1,12 +1,12 @@
-import { sleep } from "@/internal/util"
-import { FetchPage, RSC, ParseSearchComponent, Bing } from "@/rewards/parser"
-import { TaskResponse } from "@/internal/task"
-import { log } from "shared/log"
-import { socialMedias } from "@/rewards/search"
+import { sleep } from "@/utility/util"
+import { FetchPage, RSC, ParseSearchComponent, Bing } from "@/helpers/parser"
+import { TaskResponse } from "@/task"
+import { log } from "@/helpers/debugging"
+import { socialMedias } from "@/helpers/search"
 
 const GetBatchQuery = async (): Promise<string> => {
   try {
-    const res = await fetch("https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=1&format=json&origin=*")
+    const res = await curl("https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=1&format=json&origin=*")
     const data = await res.json()
     const pages = Object.values(data.query.pages)
     return (pages[0] as any)?.title || socialMedias[0]
@@ -21,7 +21,7 @@ const reportSearch = async (q: string) => {
     log.searches(`Reporting search "${q}"`)
     const SID = await chrome.cookies.get({
         name: "_SS",
-        url: "https://www.bing.com"
+        url: Bing
     })
 
     const searchRes = await curl(`${Bing}/search?q=${encodeURIComponent(q)}&cvid=${cached_cvid}&SID=${SID}`, {
@@ -42,9 +42,9 @@ const reportSearch = async (q: string) => {
         return null
     }
 
-    fetch(`https://vcf.bing.com/bd/verify?IID=BdVerify&SFX=1&IG=${IG}`, {
+    curl(`https://vcf.bing.com/bd/verify?IID=BdVerify&SFX=1&IG=${IG}`, {
         headers: { "accept": "*/*", "priority": "u=1, i" },
-        referrer: "https://www.bing.com/",
+        referrer: Bing,
         method: "GET",
         mode: "cors",
         credentials: "omit"

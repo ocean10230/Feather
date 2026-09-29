@@ -1,8 +1,8 @@
-import { log } from "shared/log"
-import { date } from "@/rewards/utility"
-import { sleep } from "@/internal/util"
-import { Storage, StorageKeys } from "shared/storage"
-import { Dashboard, RouterTree } from "@/rewards/parser"
+import { log } from "@/helpers/debugging"
+import { date } from "@/helpers/utility"
+import { sleep } from "@/utility/util"
+import { Storage, StorageKeys } from "@/helpers/storage"
+import { Dashboard, RouterTree } from "@/helpers/parser"
 
 export const RefreshSession = async () => {
     if (Date.now() <= (await Storage.get(StorageKeys.SessionValidateUntil) as number ?? 0)) return
@@ -12,19 +12,17 @@ export const RefreshSession = async () => {
     const rewardTab = await tabs.create({ url, active: false })
     if (!rewardTab.id) return
     
-    log.initialize("Handling auth request")
     await sleep(1500)
 
     if ((await tabs.get(rewardTab.id))?.url === url) {
         log.initialize("Session already valid!")
-        tabs.remove(rewardTab.id)
-        return
+        return tabs.remove(rewardTab.id)
     }
 
     await new Promise<void>((resolve) => {
         const listener = async (tabId: number, changeInfo: any, tab: chrome.tabs.Tab) => {
             if (tabId === rewardTab.id && changeInfo.status === "complete" && tab.url === url) {
-                log.initialize("Session renewed!")
+                log.initialize("Renewed!")
                 tabs.onUpdated.removeListener(listener)
                 resolve()
             }
@@ -33,8 +31,8 @@ export const RefreshSession = async () => {
         tabs.onUpdated.addListener(listener)
     })
 
-    await tabs.remove(rewardTab.id)
-    await Storage.set(StorageKeys.SessionValidateUntil, Date.now() + 1000 * 60 * 60 * 4)
+    tabs.remove(rewardTab.id)
+    Storage.set(StorageKeys.SessionValidateUntil, Date.now() + 14400000)
 }
 
 export const CompleteActivity = async (quest: QuestData, dpl?: string): Promise<boolean> => {
@@ -48,12 +46,7 @@ export const CompleteActivity = async (quest: QuestData, dpl?: string): Promise<
             "next-router-state-tree": RouterTree,
             "x-deployment-id": dpl
         } as HeadersInit, referrer: Dashboard,
-        body: json.stringify([
-            quest.hash, 11, {
-                isPromotional: "$undefined", offerid: quest.offerId,
-                timezoneOffset: String(new Date().getTimezoneOffset())
-            }
-        ]),
+        body: `["${quest.hash}",11,{"isPromotional":"$undefined","offerid":"${quest.offerId}","timezoneOffset":"${new Date().getTimezoneOffset()}"}]`,
         method: "POST",
         mode: "cors",
         credentials: "include"

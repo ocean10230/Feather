@@ -1,9 +1,9 @@
-import { sleep } from "@/internal/util"
-import { log } from "shared/log"
-import { Storage, StorageKeys } from "shared/storage"
-import { ActivitiesValidator, CompleteActivity } from "@/rewards/component"
-import { TaskResponse } from "@/internal/task"
-import { Dashboard, FetchPage, RSC } from "@/rewards/parser"
+import { sleep } from "@/utility/util"
+import { log } from "@/helpers/debugging"
+import { Storage, StorageKeys } from "@/helpers/storage"
+import { ActivitiesValidator, CompleteActivity } from "@/helpers/rewards"
+import { TaskResponse } from "@/task"
+import { Dashboard, FetchPage, RSC } from "@/helpers/parser"
 
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.DailySetCompletion)

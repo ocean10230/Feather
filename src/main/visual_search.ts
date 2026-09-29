@@ -1,19 +1,20 @@
-import { Storage, StorageKeys } from "shared/storage"
-import { TaskResponse } from "@/internal/task"
-import { Bing, ParseReport, ParseSearchComponent } from "@/rewards/parser"
-import { log } from "shared/log"
+import { Storage, StorageKeys } from "@/helpers/storage"
+import { TaskResponse } from "@/task"
+import { Bing, Main, ParseReport, ParseSearchComponent } from "@/helpers/parser"
+import { log } from "@/helpers/debugging"
 
-const resolution = [ 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600 ]
-const r = () => resolution[math.floor(math.random() * resolution.length)]
+const resolution = Array.from({ length: 14 }, (_,i) => (100 + i * 50))
+
+const r = () => resolution[Math.floor(Math.random() * resolution.length)]
 
 const report_visual_search = async (query: string, bcid: string, form: string, fetch_prom: Response) => {
     log.searches(`Reporting visual search`)
-    
+
     const {IG, IID} = ParseSearchComponent(await fetch_prom.text())
     const url = Bing + "/rewardsapp/reportActivity"
-    const body = new params({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}`, V: "web" })
+    const body = new URLSearchParams({ url: Bing + `/search?q=${encodeURIComponent(query)}&FORM=${form}`, V: "web" })
 
-    return await curl(`${url}?${ new params({ IG, IID, q: query, FORM: form, bcid }) }`, {
+    return await curl(`${url}?${new URLSearchParams({ IG, IID, q: query, FORM: form, bcid }) }`, {
         method: "POST", body, credentials: "include",
         headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "*/*" }
     })
@@ -22,7 +23,13 @@ const report_visual_search = async (query: string, bcid: string, form: string, f
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.VisualSearchCompletion)
     if (completed === true) return TaskResponse.Confirm
-    
+
+    const page = await (await curl(Main + "/earn")).text()
+    const completedRegex = /<div role="button" tabindex="-1"><div class="h-4 shrink-0 rounded-cornerCircular[^"]*border-statusInformativeStroke[^"]*"[^>]*>.*?<p class="text-metadata leading-none">(\d+)<\/p><\/div><\/div>/
+    const isCompleted = completedRegex.test(page)
+
+    if (isCompleted) return TaskResponse.Confirm
+
     const [w,h] = [r(),r()]
     const [ws,hs] = [String(w),String(h)]
 
@@ -37,14 +44,13 @@ export default async (): Promise<TaskResponse> => {
             resolve(reader.result.split(",")[1])
         }
 
-        reader.onerror = () => reject(reader.error)
+        reader.onerror = reject
         reader.readAsDataURL(blob)
     })
 
-    const fetch_params = new params({
-        iss: "sbiupload", FORM: "SBIWEB", sbisrc: "ImgPicker",
-        ptime: "101",
-        sbifsz: `${w}+x+${h}+·+${math.round(blob.size/1024*100)/100}+kB+·+${blob.type.split("/")[1]}`,
+    const fetch_params = new URLSearchParams({
+        iss: "sbiupload", FORM: "SBIWEB", sbisrc: "ImgPicker", ptime: "101",
+        sbifsz: `${w}+x+${h}+·+${Math.round(blob.size/1024*100)/100}+kB+·+${blob.type.split("/")[1]}`,
         sbifnm: "untitled.jpg",
         thw: ws, thh: hs, dlen: String(blob.size),
         expw: ws, exph: hs,
