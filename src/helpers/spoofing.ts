@@ -16,32 +16,18 @@ export const InitializeSpoofing = async () => {
 
     const rules: ModifyHeader[] = [
         {
-            action: {
-                type, requestHeaders: [
-                    MaskHeader("Origin", Main)
-                ]
-            },
-            condition: {
-                regexFilter: "^https://(www\\.)?rewards\\.bing\\.com/"
-            }
+            action: { type, requestHeaders: [ MaskHeader("Origin", Main) ] },
+            condition: { regexFilter: "^https://(www\\.)?rewards\\.bing\\.com/" }
         },
 
         {
-            action: {
-                type, requestHeaders: [ MaskHeader("Origin", Bing) ]
-            },
-            condition: {
-                regexFilter: "^https://vcf.bing.com/"
-            }
+            action: { type, requestHeaders: [ MaskHeader("Origin", Bing) ] },
+            condition: { regexFilter: "^https://vcf.bing.com/" }
         },
 
         {
-            action: {
-                type, requestHeaders: [ MaskHeader("Origin", Bing) ]
-            },
-            condition: {
-                regexFilter: "^https://(www\\.)?bing\\.com/"
-            }
+            action: { type, requestHeaders: [ MaskHeader("Origin", Bing) ] },
+            condition: { regexFilter: "^https://(www\\.)?bing\\.com/" }
         }
     ]
 

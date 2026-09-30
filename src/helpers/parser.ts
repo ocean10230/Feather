@@ -30,16 +30,13 @@ export const ScriptList = (html: string): NextFlightData => {
 
 export const RSC = async (
   data: string,
-  keyword: string | string[],
-  multiple = false
+  keyword: string | string[]
 ): Promise<any | any[] | null> => {
   const [res, suc] = await pcall(() => {
     const matches = (data.match(/[^\r\n]+/g) ?? [])
       .map((line, index) => ({ line, index }))
       .filter(({ line }) => !Array.isArray(keyword) ? line.includes(keyword) : keyword.some(k => line.includes(k))
     )
-
-    if (!matches.length) return multiple?[]:null
 
     const parse = ({ line }: { line: string, index: number }) => {
       const match = line.match(/(?<=\b\d+[a-z]?:)\[[\s\S]*\]/)?.[0] || ""
@@ -54,15 +51,13 @@ export const RSC = async (
       }
     }
 
-    return multiple
-      ? matches.map(parse).filter(v => v != null)
-      : parse(matches[0])
+    return parse(matches[0])
   })
 
   if (suc) return res
 
   log.error("Failed to parse NextJS flight data:", res)
-  return multiple ? [] : null
+  return null
 }
 
 export const FetchPage = async (page: string = Main + "/earn"): Promise<NextFlightData> => ScriptList( await (await curl(page)).text() )
