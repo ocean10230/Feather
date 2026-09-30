@@ -56,7 +56,7 @@ export default async (): Promise<TaskResponse> => {
     const dpl = await Storage.get(StorageKeys.DeploymentId) as string
 
     if (clickable && parsed_points > 0) {
-        const promise = await fetch("https://rewards.bing.com/dashboard", {
+        const promise = await curl(Dashboard, {
             "headers": {
                 "accept": "text/x-component",
                 "content-type": "text/plain;charset=UTF-8",

@@ -1,5 +1,4 @@
-import { pcall } from "@/helpers/utility"
-import { randomHex } from "@/utility/util"
+import { pcall, randomHex } from "@/helpers/utility"
 import { log } from "@/helpers/debugging"
 
 export const Bing = "https://www.bing.com"
@@ -50,7 +49,7 @@ export const RSC = async (
         const parsed = JSON.parse(match.replace(/"\$undefined"/g, "null"))
         return parsed?.[3] ?? null
       } catch (e) {
-        (e instanceof SyntaxError) ? console.warn("Got syntax error:", e, match) : console.warn("Unknown parse failure:", e)
+        (e instanceof SyntaxError) ? log.error("Got syntax error:", e, match) : log.error("Unknown parse failure:", e)
         return match
       }
     }
@@ -62,7 +61,7 @@ export const RSC = async (
 
   if (suc) return res
 
-  console.error("Failed to parse NextJS flight data:", res)
+  log.error("Failed to parse NextJS flight data:", res)
   return multiple ? [] : null
 }
 

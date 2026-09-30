@@ -1,6 +1,6 @@
 import { log } from "@/helpers/debugging"
 import { date } from "@/helpers/utility"
-import { sleep } from "@/utility/util"
+import { sleep } from "@/helpers/utility"
 import { Storage, StorageKeys } from "@/helpers/storage"
 import { Dashboard, RouterTree } from "@/helpers/parser"
 
@@ -53,6 +53,7 @@ export const CompleteActivity = async (quest: QuestData, dpl?: string): Promise<
     })
 
     const text = await res.text()
+    await sleep(500 + (Math.random() * 500))
     return text.includes("true")
 }
 

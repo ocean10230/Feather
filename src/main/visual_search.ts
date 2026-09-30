@@ -21,11 +21,11 @@ const report_visual_search = async (query: string, bcid: string, form: string, f
 }
 
 export default async (): Promise<TaskResponse> => {
-    const completed = await Storage.get(StorageKeys.VisualSearchCompletion)
+    const completed = await Storage.get(StorageKeys.VisualSearch)
     if (completed === true) return TaskResponse.Confirm
 
     const page = await (await curl(Main + "/earn")).text()
-    const completedRegex = /<div role="button" tabindex="-1"><div class="h-4 shrink-0 rounded-cornerCircular[^"]*border-statusInformativeStroke[^"]*"[^>]*>.*?<p class="text-metadata leading-none">(\d+)<\/p><\/div><\/div>/
+    const completedRegex = /<div[^>]*border-statusInformativeStroke[^>]*>.*?<p[^>]*>(\d+)<\/p><\/div><\/div>/
     const isCompleted = completedRegex.test(page)
 
     if (isCompleted) return TaskResponse.Confirm

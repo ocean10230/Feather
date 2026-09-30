@@ -20,9 +20,6 @@ export const TaskRegistrationStatus = {
   AlreadyDone: 4,
 } as const
 
-
-const MappedResponse = Object.keys(TaskResponse)
-
 export type TaskRegistrationStatus = typeof TaskRegistrationStatus[keyof typeof TaskRegistrationStatus];
 export type TaskResponse = (typeof TaskResponse)[keyof typeof TaskResponse]
 
@@ -69,8 +66,7 @@ export const Listen = () => {
                 return
             }
 
-            const Result: TaskResponse = await Task.handler()
-            log.task(`Task "${Task.name}": ${MappedResponse[Result]}`)
+            await Task.handler()
         }
         catch (e) { Error(Task, e) }
     })

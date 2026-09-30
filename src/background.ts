@@ -22,10 +22,10 @@ const Initialize = async () => {
 
   if (storedDay !== currentDay) await Promise.all([
     Storage.set(StorageKeys.Today, currentDay),
-    Storage.set(StorageKeys.ActivitiesCompletion, false),
-    Storage.set(StorageKeys.DailySetCompletion, false),
-    Storage.set(StorageKeys.SearchCompletion, false),
-    Storage.set(StorageKeys.VisualSearchCompletion, false)
+    Storage.set(StorageKeys.Activities, false),
+    Storage.set(StorageKeys.DailySet, false),
+    Storage.set(StorageKeys.Search, false),
+    Storage.set(StorageKeys.VisualSearch, false)
   ])
 
   await InitializeSpoofing()

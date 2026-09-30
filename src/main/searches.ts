@@ -1,17 +1,16 @@
-import { sleep } from "@/utility/util"
+import { pcall, sleep } from "@/helpers/utility"
 import { FetchPage, RSC, ParseSearchComponent, Bing } from "@/helpers/parser"
 import { TaskResponse } from "@/task"
 import { log } from "@/helpers/debugging"
-import { socialMedias } from "@/helpers/search"
 
 const GetBatchQuery = async (): Promise<string> => {
   try {
     const res = await curl("https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=1&format=json&origin=*")
     const data = await res.json()
     const pages = Object.values(data.query.pages)
-    return (pages[0] as any)?.title || socialMedias[0]
+    return (pages[0] as any)?.title
   } catch {
-    return socialMedias[Math.floor(Math.random() * socialMedias.length)]
+    return "youtube"
   }
 }
 
@@ -76,24 +75,23 @@ const reportSearch = async (q: string) => {
 }
 
 const ExecutePhase = async (): Promise<boolean> => {
-    // Re-fetch dashboard state on every recursive hop to get real-time point counters
     const pageDat = await FetchPage()
     const parsedData = await RSC(pageDat, `\"type\":\"pointbreakdown\"`)
-    const counter = parsedData?.model?.pointsCounters?.pc
+    const counter: SearchInfo = parsedData?.model?.pointsCounters?.pc
 
     if (!counter || counter.progress >= counter.max) {
-        log.searches("Search completed or counter unavailable")
+        log.searches("Search completed")
         return true
     }
 
     log.searches(`Progress: ${counter.progress}/${counter.max}`)
 
-    const query = await GetBatchQuery()
-    try {
-        await reportSearch(query)
-    } catch (e) {
-        log.searches(`Failed to search "${query}":`, e)
+    for (let i = counter.progress / 3; i > counter.max / 3; i++) {
+        const query = await GetBatchQuery()
+        pcall(async () => await reportSearch(query))
     }
+
+
 
     await sleep(9000 + Math.random() * 3500)
     return await ExecutePhase()

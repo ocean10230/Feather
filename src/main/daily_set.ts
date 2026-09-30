@@ -1,4 +1,3 @@
-import { sleep } from "@/utility/util"
 import { log } from "@/helpers/debugging"
 import { Storage, StorageKeys } from "@/helpers/storage"
 import { ActivitiesValidator, CompleteActivity } from "@/helpers/rewards"
@@ -6,7 +5,7 @@ import { TaskResponse } from "@/task"
 import { Dashboard, FetchPage, RSC } from "@/helpers/parser"
 
 export default async (): Promise<TaskResponse> => {
-    const completed = await Storage.get(StorageKeys.DailySetCompletion)
+    const completed = await Storage.get(StorageKeys.DailySet)
     if (completed == true) return TaskResponse.Confirm
     
     log.activities("Parsing daily set")
@@ -19,7 +18,6 @@ export default async (): Promise<TaskResponse> => {
     
     for (const quest of activities) {
         await CompleteActivity(quest)
-        await sleep(500 + (Math.random() * 500))
     }
 
     return TaskResponse.Done

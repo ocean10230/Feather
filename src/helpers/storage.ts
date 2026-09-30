@@ -5,10 +5,12 @@ export const Storage = {
 
 export const StorageKeys = {
     Today: "Today_Date",
-    SearchCompletion: "Today_SearchCompleted",
-    ActivitiesCompletion: "Today_ActivitiesCompletion",
-    DailySetCompletion: "Today_DailySetCompletion",
-    VisualSearchCompletion: "Today_VisualSearchCompletion",
+
+    Search: "Today_SearchCompleted",
+    Activities: "Today_ActivitiesCompletion",
+    DailySet: "Today_DailySetCompletion",
+    VisualSearch: "Today_VisualSearchCompletion",
+    
     DeploymentId: "DeploymentId",
     ClaimPointsNextActionId: "ClaimPointsNextActionId",
     SessionValidateUntil: "SessionValidateUntil",
