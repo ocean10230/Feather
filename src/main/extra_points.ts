@@ -1,4 +1,4 @@
-import { Dashboard, RSC, ScriptList } from "@/helpers/parser"
+import { Dashboard, RouterTree, RSC, ScriptList } from "@/helpers/parser"
 import { TaskResponse } from "@/task"
 import { log } from "@/helpers/debugging"
 import { Storage, StorageKeys } from "@/helpers/storage"
@@ -53,11 +53,27 @@ export default async (): Promise<TaskResponse> => {
     const parsed_button = parsed_modal?.children?.[0]?.[3]
     const parsed_points = parsed_button?.instrument?.data.points as number
     const clickable = parsed_button?.instrument?.click as boolean
-
     const dpl = await Storage.get(StorageKeys.DeploymentId) as string
 
-    log.points("Parsed points:", parsed_points, "Claimable:", clickable)
-    log.points("Parsed ActionID", await GetActionID(dpl))
+    if (clickable && parsed_points > 0) {
+        const promise = await fetch("https://rewards.bing.com/dashboard", {
+            "headers": {
+                "accept": "text/x-component",
+                "content-type": "text/plain;charset=UTF-8",
+                "next-action": await GetActionID(dpl),
+                "next-router-state-tree": RouterTree,
+                "x-deployment-id": dpl
+            },
+            "referrer": Dashboard,
+            "body": "[]",
+            "method": "POST",
+            "mode": "cors",
+            "credentials": "omit"
+        })
+
+        if ((await promise.text()).includes(":true"))
+            return TaskResponse.Confirm
+    }
 
     return TaskResponse.Done
 }

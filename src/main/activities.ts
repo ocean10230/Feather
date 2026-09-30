@@ -18,8 +18,6 @@ export default async (): Promise<TaskResponse> => {
     if (!activities) return TaskResponse.InvalidInformation
     if (activities.length < 1) return TaskResponse.Confirm
 
-    log.activities("Faking completions")
-    
     for (const quest of activities) {
         await CompleteActivity(quest)
         await sleep(500 + (Math.random() * 500))

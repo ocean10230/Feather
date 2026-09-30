@@ -37,11 +37,8 @@ export const Register = async (task: TaskRegistration) => {
             handler()
             return true
         }
-        catch {
-            return false
-        }
+        catch { return false }
     }
-    log.task("Adding", task.name)
 
     await alarm.create(task.name, { periodInMinutes: task.interval })
     RegisteredTasks.set(task.name, task)
@@ -50,13 +47,13 @@ export const Register = async (task: TaskRegistration) => {
 }
 
 const Error = (Task: TaskRegistration, e: any) => {
-    log.task(`ERR: "${Task.name}"`)
-    log.error(`Fix needed for "${Task.name}": `, e)
+    log.task(`err at "${Task.name}":`, e)
 }
 
 export const Listen = () => {
+    log.task("Initializing", RegisteredTasks.size, "tasks")
+
     for (const Task of RegisteredTasks.values()) {
-        log.task("Runnning", Task.name)
         try { void Task.handler() }
         catch (e) { Error(Task, e) }
     }
