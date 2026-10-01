@@ -1,6 +1,6 @@
 import { Storage, StorageKeys } from "@/helpers/storage"
 import { TaskResponse } from "@/task"
-import { Bing, Main, ParseReport, ParseSearchComponent } from "@/helpers/parser"
+import { Bing, ParseReport, ParseSearchComponent } from "@/helpers/parser"
 import { log } from "@/helpers/debugging"
 
 const resolution = Array.from({ length: 14 }, (_,i) => (100 + i * 50))
@@ -23,12 +23,6 @@ const report_visual_search = async (query: string, bcid: string, form: string, f
 export default async (): Promise<TaskResponse> => {
     const completed = await Storage.get(StorageKeys.VisualSearch)
     if (completed === true) return TaskResponse.Confirm
-
-    const page = await (await curl(Main + "/earn")).text()
-    const completedRegex = /<div[^>]*border-statusInformativeStroke[^>]*>.*?<p[^>]*>(\d+)<\/p><\/div><\/div>/
-    const isCompleted = completedRegex.test(page)
-
-    if (isCompleted) return TaskResponse.Confirm
 
     const [w,h] = [r(),r()]
     const [ws,hs] = [String(w),String(h)]
